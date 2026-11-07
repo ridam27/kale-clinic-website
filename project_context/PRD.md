@@ -11,10 +11,14 @@ Build a secure, responsive platform for one homeopathic doctor to
 consult patients online in India and approved international markets. The
 system includes: 1. Public patient website and guest booking. 2.
 Passwordless patient portal for previous records. 3. Doctor/admin
-dashboard. 4. Independent video consultation application. 5.
-Consultation notes and optional vitals. 6. Medicine master and
-structured prescription builder. 7. PDF generation, email delivery,
-payments, follow-ups, and patient history.
+dashboard sharing the same database with the website (fee management,
+prescription builder, patient database, availability, and scheduling).
+4. Integration with an independent video calling application (maintained in a
+separate repository) featuring dynamic link generation, screen share, mute,
+cam, settings, drawing canvas, and note taker. 5. Consultation notes
+and optional vitals. 6. Medicine master and structured prescription
+builder. 7. PDF generation, email delivery, payments, follow-ups, and
+patient history.
 
 ## 2. Goals
 
@@ -63,7 +67,8 @@ support a future admin user.
 Public pages: - Home - About doctor - Qualifications and registration
 details - Consultation services and fees - How online consultation
 works - Book appointment - FAQs - Contact - Privacy policy - Terms -
-Cancellation/refund policy - Consent and disclaimer
+Cancellation/refund policy - Consent and disclaimer.
+Includes accessible Theme Switcher (Light / Dark / System) across all public and portal pages.
 
 Do not invent doctor name, qualifications, registration details,
 biography, contact details, or clinical claims. Use editable
@@ -139,33 +144,39 @@ payment. - Failed/expired payment releases slot. - Never store card
 number, CVV, or raw card credentials. - Evaluate actual merchant
 eligibility for international payments; do not assume gateway support.
 
-## 8. Independent video application
+## 8. Independent video calling platform
 
-Separate application/subdomain, e.g. `consult.doctor-domain.com`,
-integrated with the shared backend.
+The video calling application is an independent standalone project maintained in a separate repository (not coupled to clinic branding or subdomains like `doctor.videocall.com`). It serves as a pure, dedicated video calling platform with dynamic link generation support for external systems.
 
-Features: - One-to-one video/audio - Camera/microphone controls - Secure
-room and short-lived participant tokens - Waiting room and doctor
-admission - Doctor-controlled termination - Responsive browser support -
-Reconnection/network status - Optional in-call chat only if approved -
-No recording, transcription, or media storage
+Key platform features:
+- Screen share
+- Camera toggle (cam on/off)
+- Microphone toggle (mute / unmute)
+- Audio/video settings and device selection
+- Drawing canvas (interactive whiteboard for visual communication)
+- Note taker (integrated notes interface where doctor can write notes during consultation)
+- Theme switcher (accessible Light / Dark / System mode toggle)
+- Dynamic link generation by other systems (doctor's backend generates meeting links dynamically for confirmed appointments)
+- Secure room tokens / short-lived dynamic links
+- No video recording, transcription, or media storage
 
-Evaluate WebRTC with LiveKit or equivalent. Backend validates
-appointment, creates room, and issues role-limited tokens. Store session
-metadata only: session ID, appointment ID, start/end, duration, status,
-and necessary join/leave events.
+Integration with clinic backend:
+- Doctor backend generates dynamic meeting links for scheduled consultations.
+- Clinic backend validates appointment timing, participant authorization, and records session metadata only (session ID, appointment ID, start/end, call duration).
 
-## 9. Doctor dashboard
+## 9. Doctor and Admin dashboard
 
-Sections: - Overview - Calendar/appointments - Availability - Patients -
-Consultation workspace - Prescriptions - Medicine master - Follow-ups -
-Payments - Settings
+The admin/doctor dashboard shares the same PostgreSQL database as the public patient website, providing a unified data store and workflow.
 
-Overview: today's/upcoming/completed appointments, pending payments,
-follow-ups due, recent patients, revenue summary.
-
-Doctor can search/filter records, reschedule/cancel, open video room,
-mark completion/no-show, and review payment status.
+Key modules and capabilities:
+- **Fee management**: Configure consultation fees (India INR 150 baseline, international pricing when active, initial vs. follow-up consultation fees, currency rules).
+- **Prescription maker**: Structured prescription builder, medicine search from master, custom rows, potency, dosage, frequency, duration, instructions, preview, immutable versioning, and PDF generation.
+- **Patient database**: Complete patient records, demographic details, consultation history, past prescriptions, call logs, and follow-up recommendations.
+- **Video link generation & launch**: Dynamically generate and dispatch consultation links for the independent video platform upon appointment confirmation.
+- **Calendar & appointment management**: Slot availability in IST, buffers, booking approval/reschedule/cancellation, and status tracking (`confirmed`, `completed`, `no-show`).
+- **Payments overview**: Real-time payment verification logs, order status, and transaction references.
+- **Medicine master**: Doctor-curated medicine catalogue.
+- **Admin settings & Preferences**: Clinic profile, working hours, hold expiry, policies, and global Theme Switcher (Light / Dark / System).
 
 ## 10. Consultation workspace
 
@@ -283,17 +294,21 @@ These are proposals; document trade-offs before changing.
 
 ## 17. Phased delivery
 
-1.  Foundation, public website, patient model, guest booking UI.
-2.  Doctor availability, timezone conversion, slot holds, payments,
-    email.
-3.  Independent video application and session metadata.
-4.  Doctor dashboard, patient history, notes, vitals.
-5.  Medicine master, prescription builder, PDF, email.
-6.  Passwordless patient portal, security hardening, compliance review,
-    tests, deployment.
+Refer to [`project_context/phases.md`](phases.md) for the detailed phase-by-phase execution plan:
+- **Phase 0**: Repository Scaffolding (3 folders each with `frontend/` & `backend/`) & Shared PostgreSQL DB Setup
+- **Phase 1**: Completely Independent Video Calling App (`video-app`) with Whiteboard, Notes & Dynamic Link Generation
+- **Phase 2**: Doctor Scheduling & Timezone Engine (Shared Backend)
+- **Phase 3**: Patient Website & Guest Booking (`patient-website`)
+- **Phase 4**: Doctor & Admin Dashboard (`doctor-panel`) with Fee Management & Patient DB
+- **Phase 5**: Medicine Master, Prescription Maker & Digital PDF
+- **Phase 6**: Passwordless Patient Portal (`patient-website`)
+- **Phase 7**: Quality Assurance, Security Hardening & Launch Readiness
 
 ## 18. Acceptance criteria
 
+-   Three top-level folders (`patient-website/`, `doctor-panel/`, `video-app/`), each containing dedicated `frontend/` and `backend/`.
+-   `doctor-panel` and `patient-website` connect to and operate on the exact same shared PostgreSQL database.
+-   `video-app` is completely independent with its own signaling backend and video frontend.
 -   Guest booking works without password account.
 -   Country/timezone selection works, including multi-timezone
     countries.
@@ -303,13 +318,20 @@ These are proposals; document trade-offs before changing.
 -   Payment webhook controls confirmation and is idempotent.
 -   INR 150 is initial configurable India fee; international price can
     remain pending.
--   Video access is appointment-authorized; recording disabled.
+-   Admin dashboard supports fee management, prescription maker, patient
+    database, and consultation link generation.
+-   Video calling platform is standalone and unbranded, supporting dynamic link generation by external
+    systems.
+-   Video platform supports screen share, mute, cam, settings, drawing
+    canvas (whiteboard), and note taker.
+-   Video calls are unrecorded; recording disabled.
 -   Call start/end/duration stored.
 -   Doctor can enter optional vitals; missing values show `—`.
 -   Medicine master starts empty and supports custom rows.
 -   Doctor approves every prescription.
 -   PDF is private, emailed, and available in portal.
 -   Patient sees only own records; internal notes remain private.
+-   Theme switcher with Light, Dark, and System modes is accessible across the patient website, doctor/admin dashboard, and video calling app without theme flashing.
 
 ## 19. Pending client decisions
 
@@ -322,9 +344,9 @@ requirements; hosting/data residency; brand and languages.
 
 ## 20. Antigravity instruction
 
-Read all six project documents before coding. First propose
+Read all project documentation files (`PRD.md`, `architecture.md`, `design.md`, `rules.md`, `Security.md`, `memory.md`, and `phases.md`) before coding. First propose
 architecture, schema, folder structure, external services, security
 risks, milestones, and unanswered decisions. Do not start major
-implementation until the plan is reviewed. Build incrementally and test
-timezone conversion, slot conflicts, payment webhooks, passwordless
-access, authorization, video access, and prescription generation.
+implementation until the plan is reviewed. Build incrementally following
+`phases.md` and test timezone conversion, slot conflicts, payment webhooks,
+passwordless access, authorization, video access, and prescription generation.

@@ -5,10 +5,10 @@
 
 ## 1. Before working
 
-Read all six project documents. PRD is the product baseline; Security is
-mandatory; architecture is the approved technical direction; this file
-is the implementation guardrail; memory is the chronological handoff
-log.
+Read all project documents (`PRD.md`, `architecture.md`, `design.md`, `rules.md`, `Security.md`, `memory.md`, and `phases.md`). PRD is the product baseline; Security is
+mandatory; architecture is the approved technical direction; phases is
+the implementation roadmap; this file is the implementation guardrail;
+memory is the chronological handoff log.
 
 Make small testable changes. Use TypeScript strict mode, shared types,
 schema validation, migrations, readable code, and tests. Keep business
@@ -16,6 +16,12 @@ logic server-side. Do not silently change scope.
 
 ## 2. Use
 
+-   Three top-level directories (`patient-website/`, `doctor-panel/`, `video-app/`), each containing isolated `frontend/` and `backend/`.
+-   Shared PostgreSQL database for `patient-website` and `doctor-panel`.
+-   Completely independent `video-app` supporting dynamic link generation by external systems.
+-   Video platform feature set: screen share, camera controls, microphone mute/unmute, settings, drawing canvas, and note taker.
+-   Doctor/admin panel capabilities: fee management, prescription maker, patient database, appointment scheduling, and consultation link generation.
+-   Universal theme switcher with Light, Dark, and System modes across all three frontends.
 -   Server-side validation and authorization for every protected
     operation.
 -   Server-side price lookup and payment verification.
@@ -24,12 +30,13 @@ logic server-side. Do not silently change scope.
 -   A maintained timezone library.
 -   Database transactions, constraints, and idempotency.
 -   Short-lived, single-use passwordless tokens.
--   Server-issued video tokens.
+-   Server-issued video tokens and dynamically generated room links.
 -   Private file storage and authorized downloads.
 -   Immutable booking price snapshots and prescription versions.
 -   Medicine snapshots in prescription items.
 -   Structured logs with correlation IDs and redaction.
 -   Accessible semantic controls and centralized design tokens.
+-   Theme switcher with Light, Dark, and System modes across all surfaces (patient website, doctor dashboard, and video app).
 -   Explicit states and allowed state transitions.
 
 ## 3. Avoid
@@ -37,6 +44,8 @@ logic server-side. Do not silently change scope.
 -   Never trust browser role, price, payment state, patient ownership,
     availability, or prescription status.
 -   No secrets in frontend bundles or source control.
+-   No separate databases for patient website and doctor panel (they must share the same PostgreSQL database).
+-   No coupling of the video calling platform as a clinic-branded subdomain (e.g. `doctor.videocall.com`); it is an independent standalone project in a separate repo.
 -   No public medical-file storage or permanent public PDF URLs.
 -   No card number/CVV storage.
 -   No manual timezone offset arithmetic.
@@ -132,9 +141,10 @@ conflict.
 Empty medicine master; incomplete row; PDF failed; email failed;
 finalized/read-only; amendment flow.
 
-### Video
+### Video calling platform
 
-Permission denied; device unavailable; waiting for doctor; appointment
+Permission denied; device unavailable; screen share rejected/cancelled;
+canvas sync error; notes autosave status; waiting for doctor; appointment
 not open; invalid/expired link; reconnecting; meeting ended. No
 recording control/state.
 
@@ -168,12 +178,15 @@ review. It is not in current scope.
 -   Calculate age from DOB at consultation date where possible.
 -   Do not merge patients by name alone.
 
-## 10. Accessibility and UX
+## 10. Accessibility, Themes, and UX
 
 Visible labels, actionable validation, keyboard navigation,
 screen-reader names, clear timezone/date labels, confirmation for
 destructive/high-impact actions, preserve safe input on validation
 failure, and show unsaved state.
+Theme switching across Light, Dark, and System modes must meet WCAG 2.2 AA
+contrast in both palettes, prevent initial load theme flash (FOUC), and dynamically
+respond to changes in system `prefers-color-scheme`.
 
 ## 11. Critical tests
 

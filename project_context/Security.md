@@ -42,8 +42,9 @@ Doctor/admin: - Strong authentication. - MFA preferred/required for
 privileged accounts. - Server-side role checks on every protected
 endpoint.
 
-## 4. Authorization and patient isolation
+## 4. Authorization, shared database, and patient isolation
 
+-   **Shared Database Isolation**: Patient website and Doctor/Admin panel share the same PostgreSQL database. Enforce strict server-side authorization and RBAC on all queries. Patient roles cannot query or mutate admin models (e.g. fee rules, doctor profile, other patients' records).
 -   Every record read/download must verify patient ownership.
 -   Protect against IDOR by checking object-level authorization for
     every ID.
@@ -80,18 +81,15 @@ endpoint.
 -   Authorize and audit refunds.
 -   Keep immutable price snapshot for each booking.
 
-## 7. Video security
+## 7. Video calling platform security
 
--   Create rooms through server-side API.
--   Keep media provider secrets on server.
--   Issue short-lived role-limited tokens.
--   Bind token to appointment, participant, and room.
--   Validate appointment and join window before issuing.
--   Do not expose room-admin secrets in browser.
--   Disable recording at application and provider/infrastructure levels.
--   Store session metadata only.
--   Expire/revoke tokens after use/session.
--   Prevent room guessing and unauthorized joining.
+-   **Independent Service Boundary**: Video platform is an independent project hosted in a separate repository; doctor's backend interacts via authenticated server APIs or cryptographically signed dynamic links.
+-   **Dynamic Link Generation**: External link generation must use cryptographically secure room identifiers, participant-specific short-lived tokens, and signature verification.
+-   **Link Expiry & Scoping**: Dynamic links expire promptly after the consultation window closes.
+-   **In-Call Privacy**: Real-time drawing canvas (whiteboard) and doctor's note taker are scoped strictly to the authenticated room session and cleared or securely transferred; no leakage across sessions.
+-   **No Media Persistence**: Disable video recording, audio recording, and automated transcription at application and infrastructure levels.
+-   **Metadata Only**: Store session metadata only (session ID, appointment ID, start/end timestamps, call duration).
+-   Prevent room guessing, brute force, and unauthorized participant admission.
 
 ## 8. Medical records and files
 

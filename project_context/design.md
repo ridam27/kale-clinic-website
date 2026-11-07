@@ -25,6 +25,7 @@ Provisional tokens (validate contrast before production):
 
 ``` css
 :root {
+  /* Light Mode (Default) */
   --color-primary: #176B63;
   --color-primary-hover: #12574F;
   --color-primary-soft: #E8F3F1;
@@ -40,7 +41,31 @@ Provisional tokens (validate contrast before production):
   --radius-card: 14px;
   --radius-control: 10px;
 }
+
+[data-theme="dark"], .dark {
+  /* Dark Mode */
+  --color-primary: #2CA89B;
+  --color-primary-hover: #37BDB0;
+  --color-primary-soft: #16332E;
+  --color-secondary: #6B8B7D;
+  --color-background: #111817;
+  --color-surface: #1B2423;
+  --color-text: #E6EDEB;
+  --color-text-muted: #9BB0AA;
+  --color-border: #2C3B37;
+  --color-success: #38A169;
+  --color-warning: #D69E2E;
+  --color-danger: #E53E3E;
+}
 ```
+
+### Theme Switcher (Light / Dark / System)
+**Mandatory requirement across all surfaces**: Every user interface—including the **Patient Website & Portal**, the **Doctor/Admin Dashboard**, and the **Independent Video Calling App**—must provide an accessible theme switcher with three distinct states:
+1. **Light Mode**: Clean, crisp daytime palette.
+2. **Dark Mode**: Low-glare, eye-strain reducing night palette designed for clinical focus and prolonged use.
+3. **System**: Automatically matches the operating system's `prefers-color-scheme` setting.
+
+Implementation must prevent theme flashing (FOUC) during initial load and persist the user's manual selection in local storage or cookie.
 
 ## 3. Typography
 
@@ -88,10 +113,19 @@ Patient portal: - Simple navigation. - Upcoming appointment prominent. -
 Previous consultations in chronological list/timeline. - Prescription
 downloads clearly labelled. - Never show internal doctor notes.
 
-## 6. Doctor dashboard
+## 6. Doctor / Admin dashboard
 
-Navigation: - Overview - Calendar - Appointments - Patients -
-Consultations - Prescriptions - Medicines - Payments - Settings
+Navigation and core sections:
+- **Overview**: Today's schedule, pending payments, consultations due.
+- **Appointments & Calendar**: IST-based schedule, availability rules, dynamic consultation link generation.
+- **Fee Management**: Configurable consultation pricing (India INR 150 default, international pricing, follow-up vs. initial consultation rates).
+- **Patient Database**: Searchable patient registry, medical history, past appointment records, prior prescriptions, and call metadata.
+- **Prescription Maker**: Comprehensive prescription builder with live preview, medicine master search, custom rows, dosage and potencies, draft saving, and finalization to immutable PDF.
+- **Medicines**: Doctor-curated medicine catalogue.
+- **Payments**: Transaction tracking and verification logs.
+- **Settings**: Practice settings, working hours, notification rules.
+
+*Note:* Doctor dashboard operates on the same PostgreSQL database as the public patient website.
 
 Use text plus colour for status: Confirmed, Pending payment, Completed,
 Cancelled, No-show, Draft, Finalized, Email failed. Never rely on colour
@@ -101,7 +135,8 @@ alone.
 
 Prioritize clinical workflow: - Patient identity and appointment summary
 at top. - Previous history accessible in panel/tab. - Notes - Vitals -
-Prescription builder - Follow-up - Save draft and finalize
+Prescription builder - Dynamic meeting link generation/launch button -
+Follow-up - Save draft and finalize.
 
 Clearly distinguish internal notes. Show units beside measurements. Do
 not show fake vitals in production. Warn on unsaved changes. Finalize
@@ -122,17 +157,21 @@ action must be distinct and confirmed.
 Do not imitate government forms or imply endorsement. No uploaded
 signature in initial scope, subject to compliance review.
 
-## 9. Video application
+## 9. Independent video calling platform
 
-Minimal interface. Participant video is primary. Clear camera/microphone
-controls, connection status, waiting-room state, doctor admission,
-end-call action, and visible no-recording statement. No recording
-button, recording indicator, or transcript panel.
+Minimal, unbranded, focused video calling application interface:
+- **Participant Video Stage**: Clean high-focus video rendering for one-to-one consultation.
+- **Primary Media Controls**: Camera toggle (on/off), Microphone toggle (mute/unmute), Screen share button, End call button.
+- **Settings Modal**: Audio input/output selection, video camera selection, resolution/bandwidth settings, connection quality indicator.
+- **Drawing Canvas (Whiteboard)**: Collapsible or overlay drawing tool featuring freehand drawing, shapes, colours, clear canvas, and undo/redo for clinical or illustrative explanations.
+- **Note Taker**: Dedicated side panel/drawer where the doctor can write notes during the consultation.
+- **Dynamic Link Access**: Minimal, clean entry flow supporting dynamically generated meeting URLs from external systems (no doctor-branded subdomain lock-in).
+- **Security & Privacy**: Clear "Call is secure & unrecorded" reassurance badge. No recording controls, no recording indicators, and no media capture.
 
 ## 10. Reusable components
 
 Buttons, fields, searchable selects, date picker, timezone selector,
-slot cards, status badges, tables, empty/error/loading states,
+theme switcher (Light / Dark / System mode), slot cards, status badges, tables, empty/error/loading states,
 confirmation dialogs, toasts, patient summary, vitals form, medicine
 row, prescription preview, and file download item.
 

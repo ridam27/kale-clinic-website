@@ -1,36 +1,59 @@
 # Application Architecture
 
-**Status:** Proposed architecture\
-**Last updated:** 2026-11-06 20:55 IST
+**Status:** Confirmed architecture  
+**Last updated:** 2026-11-07 09:05 IST  
 
 ## 1. Overview
 
-Three application surfaces share a secure backend: 1. Patient website
-and portal. 2. Doctor/admin dashboard. 3. Independent video consultation
-application.
+The repository is organized into three distinct top-level folders, each containing separate `frontend/` and `backend/` sub-directories:
 
-Video media traffic should use dedicated WebRTC/media infrastructure,
-not ordinary API requests.
+1. **`patient-website/` (Patient Website & Records Portal)**:
+   - `frontend/`: Public patient-facing Next.js/React application (guest booking, timezone converter, passwordless portal, Light/Dark/System theme switcher).
+   - `backend/`: Dedicated API for patient operations (availability queries, booking holds, payment processing, OTP verification).
+   - **Shared Database**: Directly accesses the shared PostgreSQL database.
+
+2. **`doctor-panel/` (Doctor & Admin Management Dashboard)**:
+   - `frontend/`: Doctor-facing Next.js/React dashboard (fee management, prescription maker, patient database, appointment calendar, Light/Dark/System theme switcher).
+   - `backend/`: Dedicated API for clinical and administrative management (prescriptions, medicine master, fee rules, appointment status, dynamic consultation link generation).
+   - **Shared Database**: Operates on the **exact same PostgreSQL database** as `patient-website`.
+
+3. **`video-app/` (Completely Independent Video Calling Platform)**:
+   - `frontend/`: Standalone WebRTC video calling web application featuring screen share, camera toggle, microphone mute/unmute, settings modal, interactive drawing canvas (whiteboard), note taker, and Light/Dark/System theme switcher.
+   - `backend/`: Completely independent signaling server, room lifecycle manager, and dynamic link generation API (callable by external systems such as `doctor-panel/backend`).
+   - Independent data lifecycle; zero recording or media storage.
 
 ## 2. Logical architecture
 
 ``` mermaid
 flowchart TB
-    P[Patient Browser] --> WEB[Patient Website / Portal]
-    D[Doctor Browser] --> DASH[Doctor Dashboard]
-    P --> VIDEO[Independent Video App]
-    D --> VIDEO
-    WEB --> API[Backend API / Services]
-    DASH --> API
-    VIDEO --> API
-    API --> DB[(PostgreSQL)]
-    API --> STORE[Private Object Storage]
-    API --> EMAIL[Email Provider]
-    API --> PAY[Payment Gateway]
-    API --> VCONF[Video Provider API]
-    VIDEO <--> MEDIA[WebRTC Media Infrastructure]
-    MEDIA --> EVENTS[Session Events]
-    EVENTS --> API
+    subgraph PATIENT_SVC ["Folder 1: patient-website/"]
+        P_USER[Patient Browser] --> P_FE[frontend/\nNext.js + Theme Switcher]
+        P_FE --> P_BE[backend/\nPatient API]
+    end
+
+    subgraph DOCTOR_SVC ["Folder 2: doctor-panel/"]
+        D_USER[Doctor Browser] --> D_FE[frontend/\nDashboard + Theme Switcher]
+        D_FE --> D_BE[backend/\nAdmin & Doctor API]
+    end
+
+    subgraph SHARED_DATA ["Shared Data Layer"]
+        SHARED_DB[(Shared PostgreSQL DB\nPatients, Appointments, Fees,\nPrescriptions, Medicines)]
+        P_BE --> SHARED_DB
+        D_BE --> SHARED_DB
+        P_BE --> EXT_PAY[Payment Gateway]
+        P_BE --> EXT_EMAIL[Email Provider]
+        D_BE --> EXT_STORE[Private Storage]
+    end
+
+    subgraph VIDEO_SVC ["Folder 3: video-app/ (Completely Independent)"]
+        D_BE -.->|Dynamic Link Generation Request| V_BE[backend/\nSignaling & Link Gen API]
+        P_USER -.->|Join with Dynamic Link| V_FE[frontend/\nWebRTC Video App\n- Screen Share\n- Cam / Mute\n- Settings\n- Whiteboard\n- Note Taker\n- Theme Switcher]
+        D_USER -.->|Join with Dynamic Link| V_FE
+        V_FE <--> V_MEDIA[WebRTC Media Infrastructure]
+        V_BE --> V_MEDIA
+        V_MEDIA -.->|Call End Metadata Webhook| D_BE
+    end
+```
 ```
 
 ## 3. Suggested stack
@@ -72,29 +95,25 @@ These are proposals; explain trade-offs before changing major choices.
 
 ## 4. Application boundaries
 
-### Patient website
+### Patient website & portal
+Public pages, country/timezone selection, slot browsing, guest booking, checkout initiation, passwordless portal, appointment history, and prescription downloads. Connects to shared PostgreSQL database via Clinic Backend API.
 
-Public pages, country/timezone selection, slot browsing, guest booking,
-checkout initiation, passwordless portal, appointment and prescription
-history. No privileged secrets or authoritative business logic.
+### Doctor / Admin dashboard
+Privileged authenticated dashboard sharing the **exact same database** as the patient website. Core capabilities:
+- **Fee management**: Configure India/international consultation fees, initial vs. follow-up rates, currency settings.
+- **Prescription maker**: Medicine selection from master catalogue, custom item addition, potencies, dosages, meal instructions, draft preview, immutable version finalization, and PDF generation.
+- **Patient database**: Complete clinical and demographic history, past appointments, prescriptions, call metadata, and follow-up tracking.
+- **Dynamic link generation**: Backend triggers link generation for confirmed appointments targeting the independent video platform.
+- **Availability & calendar**: Scheduling rules in `Asia/Kolkata`, slot generation, exceptions, booking approvals.
 
-### Doctor dashboard
+### Independent video calling platform (Separate Repo)
+Standalone video calling application running in its own repository and deployment:
+- Core features: screen share, camera toggle, microphone toggle, settings modal, interactive drawing canvas (whiteboard), and an in-call note taker where notes can be taken during calls.
+- Dynamic link generation: Exposes an API / dynamic tokenized room link generation mechanism callable by external systems (such as the clinic backend).
+- Media infrastructure: WebRTC/SFU based (LiveKit or equivalent). No call recording or video storage.
 
-Privileged authentication, availability, appointments, patients,
-consultations, vitals, medicines, prescriptions, follow-ups, payments,
-settings.
-
-### Independent video app
-
-Appointment-aware join, camera/mic controls, waiting room, secure room,
-session status, reconnect handling. Backend authorizes access; app does
-not independently decide eligibility.
-
-### Backend modules
-
-Identity/auth, patients, doctor profile, availability, booking, pricing,
-payments, consultations, vitals, medicines, prescriptions, PDF, email,
-video orchestration, audit, admin settings, optional patient documents.
+### Backend modules (Clinic Platform)
+Identity/auth, patients, doctor profile, availability, booking, fee management & pricing, payments, consultations, vitals, medicines, prescriptions, PDF generation, email notifications, dynamic video link orchestration, audit logging, admin settings.
 
 ## 5. Source of truth
 
@@ -155,12 +174,18 @@ server-side. Backend updates payment and appointment in one
 safe/idempotent workflow. Reconciliation should identify
 inconsistent/pending transactions.
 
-## 8. Video architecture
+## 8. Video architecture & dynamic link generation
 
-Backend validates confirmed appointment and join window, creates room,
-issues short-lived role-limited tokens. Video service handles media.
-Authenticated provider events update session metadata. Recording
-disabled at provider and application levels.
+1. **Independent Service**: The video application runs as an independent platform in its own separate repository, completely uncoupled from doctor-specific subdomains (e.g. standard standalone video calling app).
+2. **Dynamic Link Generation**:
+   - The video platform provides an endpoint or dynamic link structure (e.g., `https://<videocall-domain>/room/:roomId?token=...` or via backend API) enabling other systems to programmatically generate room links.
+   - For confirmed appointments, the clinic backend generates a secure dynamic link for the doctor and patient.
+3. **In-Call Capabilities**:
+   - Screen share, camera controls, mute/unmute, settings (device/mic selection).
+   - **Drawing canvas**: Integrated whiteboard allowing real-time drawing/diagramming during the call.
+   - **Note taker**: Doctor writes consultation notes directly within the video calling interface.
+4. **Session Metadata**: Authenticated webhook/events update the clinic backend with session metadata (start time, end time, duration).
+5. **No Call Recording**: Call recording, media persistence, and audio transcription are strictly disabled.
 
 ## 9. Prescription architecture
 
@@ -172,32 +197,34 @@ before download.
 PDF must use the historical prescription snapshot, not mutable current
 medicine data.
 
-## 10. Suggested monorepo
+## 10. Repository structure
+
+The workspace is structured into three dedicated top-level service directories, each containing its own decoupled `frontend/` and `backend/`:
 
 ``` text
-homeopathy-platform/
-├── apps/
-│   ├── patient-web/
-│   ├── doctor-dashboard/
-│   ├── video-app/
-│   └── api/
-├── packages/
-│   ├── ui/
-│   ├── shared-types/
-│   ├── validation/
-│   ├── timezone/
-│   └── config/
-├── infrastructure/
-│   ├── deployment/
-│   ├── monitoring/
-│   └── scripts/
-├── docs/
+Kale-Clinic-Website/
+├── patient-website/                  # Folder 1: Patient Website & Portal
+│   ├── frontend/                     # Next.js / React (Public site, guest booking, portal, theme switcher)
+│   └── backend/                      # Node / Express / NestJS API (Availability, booking, payments, OTP auth)
+│
+├── doctor-panel/                     # Folder 2: Doctor & Admin Dashboard
+│   ├── frontend/                     # Next.js / React (Dashboard, fee mgmt, prescription maker, patient DB, theme switcher)
+│   └── backend/                      # Node / Express / NestJS API (Admin auth, prescriptions, fees, dynamic link gen)
+│                                     # * SHARES SAME POSTGRESQL DATABASE AS PATIENT-WEBSITE *
+│
+├── video-app/                        # Folder 3: Completely Independent Video Calling App
+│   ├── frontend/                     # WebRTC Video App (Cam/mic, screen share, settings, whiteboard, notes, theme switcher)
+│   └── backend/                      # Signaling server, room lifecycle & dynamic link generation API (Independent)
+│
+├── project_context/                  # Central documentation and specifications
 │   ├── PRD.md
-│   ├── Security.md
 │   ├── architecture.md
-│   ├── rules.md
 │   ├── design.md
-│   └── memory.md
+│   ├── rules.md
+│   ├── Security.md
+│   ├── memory.md
+│   └── phases.md
+│
 ├── .env.example
 └── README.md
 ```

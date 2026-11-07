@@ -10,7 +10,7 @@ developers.
 
 ## 1. Mandatory instructions for future AI assistants
 
-Read this file and the other five project documents before making
+Read this file and the other six project documents (`PRD.md`, `architecture.md`, `design.md`, `rules.md`, `Security.md`, `phases.md`, and `memory.md`) before making
 changes.
 
 At the end of every meaningful work session: 1. Add a new entry at the
@@ -68,9 +68,40 @@ This is a healthcare workflow platform, not only a marketing website.
 
   Follow-up               Required                   DECIDED
 
-  Video                   Independent app with       DECIDED
-                          dynamically generated      
-                          meeting link               
+  Folder structure        Three top-level folders:   DECIDED
+                          1. patient-website/        
+                             (frontend/ & backend/)  
+                          2. doctor-panel/           
+                             (frontend/ & backend/)  
+                          3. video-app/              
+                             (frontend/ & backend/)  
+
+  Database model          patient-website and        DECIDED
+                          doctor-panel share the     
+                          exact same PostgreSQL DB.  
+                          video-app is completely    
+                          independent.               
+
+  Video platform          Completely independent     DECIDED
+                          video calling app with     
+                          screen share, mute, cam,   
+                          settings, drawing canvas   
+                          (whiteboard), and note     
+                          taker. Dynamic link        
+                          generation supported.      
+
+  Admin / Doctor panel    Shares the exact same      DECIDED
+                          database as the website.   
+                          Supports fee management,   
+                          prescription maker,        
+                          patient database, and      
+                          consultation link gen.     
+
+  Theme switcher          Light, Dark, and System    DECIDED
+                          switcher available across  
+                          all surfaces (patient      
+                          website, admin panel,      
+                          and video calling app).    
 
   Recording               No recording               DECIDED
 
@@ -128,6 +159,11 @@ This is a healthcare workflow platform, not only a marketing website.
 -   Store appointment instants in UTC.
 -   Availability originates from doctor's schedule.
 -   Payment verified server-side via provider webhook.
+-   Patient website and doctor/admin dashboard share the exact same PostgreSQL database.
+-   Doctor panel manages fees, prescription builder, patient database, and dynamic consultation link generation.
+-   Video calling application is an independent project in a separate repository (pure video calling app, not coupled to clinic subdomains).
+-   Video app includes screen share, mute, cam, settings, drawing canvas, and note taker.
+-   Video app supports dynamic link generation by external systems (including doctor's backend).
 -   Never trust browser price, payment status, role, availability, or
     ownership.
 -   No video recording/transcription/AI summaries.
@@ -179,14 +215,126 @@ Do not silently invent answers.
 
 No application code has been verified in this memory file.
 
-Initial documentation baseline: - `PRD.md` - `Security.md` -
-`architecture.md` - `rules.md` - `design.md` - `memory.md`
+Documentation baseline: - `PRD.md` - `Security.md` -
+`architecture.md` - `rules.md` - `design.md` - `phases.md` - `memory.md`
 
-These six files should be maintained together. If a conflict exists,
+These seven files should be maintained together. If a conflict exists,
 record the resolution in a new dated entry and update the relevant
 source document.
 
 ## 8. Change Log
+
+### 2026-11-07 09:10 IST — Project divided into phases.md & 3-folder architecture formalized
+
+**Status:** DECIDED
+
+**Work completed**
+- Created [`phases.md`](phases.md) detailing the complete implementation breakdown:
+  - Phase 0: Repository Scaffolding (3 folders) & Shared Database Foundation
+  - Phase 1: Completely Independent Video Calling App (`video-app`)
+  - Phase 2: Doctor Scheduling & Timezone Engine
+  - Phase 3: Patient Website & Guest Booking (`patient-website`)
+  - Phase 4: Doctor & Admin Dashboard (`doctor-panel`)
+  - Phase 5: Medicine Master, Prescription Builder & Digital PDF
+  - Phase 6: Passwordless Patient Portal
+  - Phase 7: QA, Security Hardening & Launch Readiness
+- Formalized workspace structure into three folders, each containing `frontend/` and `backend/`:
+  1. `patient-website/` (`frontend/`, `backend/`)
+  2. `doctor-panel/` (`frontend/`, `backend/`) — shares the exact same PostgreSQL database as `patient-website`.
+  3. `video-app/` (`frontend/`, `backend/`) — completely independent video calling platform.
+- Synchronized `PRD.md`, `architecture.md`, `rules.md`, `Security.md`, and `phases.md`.
+
+**Decisions**
+- Three top-level folders: `patient-website/`, `doctor-panel/`, and `video-app/`, each with decoupled `frontend/` and `backend/`.
+- `patient-website` and `doctor-panel` share the exact same PostgreSQL database.
+- `video-app` is completely independent (its own signaling backend, WebRTC frontend, dynamic link API).
+- Universal Light / Dark / System theme switcher across all three frontends.
+
+**Files changed**
+- `project_context/phases.md` (created)
+- `project_context/architecture.md`
+- `project_context/PRD.md`
+- `project_context/rules.md`
+- `project_context/memory.md`
+
+**Next action**
+- Ready to proceed with Phase 0 scaffolding.
+
+### 2026-11-07 00:15 IST — Everywhere Light / Dark / System theme switcher requirement added
+
+**Status:** DECIDED
+
+**Work completed**
+- Updated `design.md` with:
+  - Extended color token definitions for both Light Mode and Dark Mode.
+  - Added dedicated Theme Switcher specification across all surfaces: Light, Dark, and System (`prefers-color-scheme`).
+  - Added theme switcher to reusable components list.
+- Updated `PRD.md`:
+  - Added theme switcher requirement across patient website & portal, doctor/admin dashboard, and the independent video calling app.
+  - Added acceptance criteria for theme switching without FOUC (flash of unstyled content).
+- Updated `rules.md`:
+  - Mandated theme switcher support and WCAG 2.2 AA contrast compliance in both palettes.
+- Updated `memory.md`:
+  - Added theme switcher to Confirmed decisions table.
+
+**Decisions**
+- Light mode, Dark mode, and System mode switcher must be available everywhere (patient website, admin panel, and video calling app).
+
+**Files changed**
+- `project_context/design.md`
+- `project_context/PRD.md`
+- `project_context/rules.md`
+- `project_context/memory.md`
+
+**Tests and verification**
+- Verified theme tokens, contrast considerations, and FOUC prevention rules across all 4 updated documents.
+
+**Next action**
+- Ready to proceed with project scaffolding (Phase 1).
+
+### 2026-11-06 23:55 IST — Video platform decoupling and Admin/Doctor panel shared DB alignment
+
+**Status:** DECIDED
+
+**Work completed**
+- Read and reviewed all 6 documentation files.
+- Updated all project context documents to incorporate two critical architectural requirements:
+  1. **Independent Video Calling Platform (New / Separate Repo)**:
+     - The video calling platform is maintained in an independent repository as a pure, standalone video calling application (uncoupled from clinic branding/subdomains such as `doctor.videocall.com`).
+     - Core built-in features: Screen share, camera toggle (cam), microphone toggle (mute), device settings, interactive drawing canvas (whiteboard), and an in-call note taker where the doctor writes consultation notes.
+     - Supports dynamic link generation callable by external systems (the doctor's backend will dynamically generate consultation links for this platform).
+     - Strict unrecorded calls policy maintained.
+  2. **Doctor / Admin Panel Architecture**:
+     - The doctor/admin panel and the public patient website share the **exact same PostgreSQL database**.
+     - Full support for:
+       - **Fee management**: Configurable consultation fees (India INR 150 base, international pricing, initial vs. follow-up consultation rates).
+       - **Prescription maker**: Structured medicine catalogue, potencies, dosages, meal instructions, live preview, versioning, and immutable PDF generation.
+       - **Patient database**: Comprehensive patient history, previous appointments, prescriptions, call metadata, and follow-ups.
+       - **Dynamic video link generation**: Generating and launching consultation rooms for confirmed bookings.
+
+**Decisions**
+- Video calling platform is housed in its own separate repository and decoupled from doctor-branded domains.
+- Video app features screen share, cam, mute, settings, drawing canvas, note taker, and external dynamic link generation API.
+- Doctor backend generates meeting links dynamically for the video platform.
+- Doctor dashboard and patient website share a unified PostgreSQL database.
+
+**Files changed**
+- `project_context/PRD.md`
+- `project_context/architecture.md`
+- `project_context/design.md`
+- `project_context/rules.md`
+- `project_context/Security.md`
+- `project_context/memory.md`
+
+**Tests and verification**
+- Verified all 6 files for consistency, cross-references, and alignment with non-negotiable rules.
+
+**Open questions / blockers**
+- Clarification on whether the video app note taker should optionally push notes back to the clinic consultation workspace via webhook/API upon call completion, or if doctor copies/maintains them in the consultation notes tab.
+- Tech stack preference for the separate video platform repository (e.g. Next.js + LiveKit / WebRTC).
+
+**Next action**
+- Await client feedback on implementation milestones and video platform repository setup.
 
 ### 2026-11-06 20:55 IST --- Initial project context captured
 
