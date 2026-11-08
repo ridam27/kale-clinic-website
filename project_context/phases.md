@@ -1,10 +1,16 @@
 # Project Delivery Phases & Implementation Roadmap
 
 **Product:** International Online Homeopathy Consultation Platform  
+**Language:** Pure JavaScript (ES Modules, .js, .jsx) across all frontends and backends.  
 **Architecture:** Three Dedicated Top-Level Folders (`patient-website`, `doctor-panel`, `video-app`), each containing decoupled `frontend/` and `backend/`.  
-**Database Model:** `patient-website` and `doctor-panel` share the exact same PostgreSQL database. `video-app` is completely independent.  
+**Database Model:** Supabase PostgreSQL shared by `patient-website` and `doctor-panel` via `@kale/database` (`file:../../packages/database`). `video-app` is completely independent.  
+**Dependency Model:** Decoupled independent `node_modules` per sub-directory (no root npm workspaces).  
+**Environment Model:** Isolated per-project `.env` in each folder (no root `.env` requirement).  
+**Prescription Storage:** Cloudflare R2 (10 GB free forever, zero egress fee, S3-compatible JS SDK).  
+**Email Engine:** Automated Dual Failover (Primary: Gmail SMTP for 500 free/day & phone replies $\rightarrow$ Secondary: Resend for automatic failover when limits are reached).  
 **Theme Support:** Universal Light Mode, Dark Mode, and System Theme Switcher across all three frontends.  
 **Created:** 2026-11-07 09:05 IST  
+**Updated:** 2026-11-08 14:05 IST  
 
 ---
 
@@ -45,46 +51,46 @@ Kale-Clinic-Website/
 ### Phase 0: Repository Scaffolding & Shared Database Foundation
 **Goal:** Establish the workspace structure, shared database schemas, and global toolchains.
 
-- [ ] **Directory Layout Setup**:
-  - Initialize the three designated folders: `patient-website/`, `doctor-panel/`, and `video-app/`.
-  - Establish `frontend/` and `backend/` sub-directories within each folder.
-- [ ] **Shared Database Architecture (`PostgreSQL`)**:
-  - Configure the shared PostgreSQL database used jointly by `patient-website` and `doctor-panel`.
-  - Define unified ORM schema (Prisma/Drizzle) for:
-    - `users` (credentials for doctor/admin; passwordless sessions for patients)
-    - `patients` (demographics, country, timezone, consent)
-    - `doctor_profile` (qualifications, registration, bio, IST timezone)
-    - `availability_rules` & `exceptions` (recurring IST schedule)
-    - `consultation_fee_rules` (India INR 150 base, international fees, initial vs follow-up)
-    - `appointments` (UTC timestamps, patient IANA timezone, hold states, status)
-    - `payments` (order ID, transaction ref, snapshot price, currency, status)
-    - `consultations` (clinical notes, internal doctor notes, optional vitals)
-    - `medicines` (curated master catalogue, potencies, forms)
-    - `prescriptions` & `prescription_items` (immutable versioned snapshots, advice)
-    - `video_sessions` (room link, appointment ref, call start/end, duration)
-    - `passwordless_tokens` (hashed single-use OTPs / magic links)
-    - `audit_logs` (tamper-evident audit trail)
-- [ ] **Global Theme Tokens & Base Configuration**:
-  - Set up CSS variables and Tailwind/CSS config in all frontends for Light Mode, Dark Mode, and System preference.
+- [x] **Directory Layout Setup**:
+  - Initialized the three designated folders: `patient-website/`, `doctor-panel/`, and `video-app/`.
+  - Established `frontend/` and `backend/` sub-directories within each folder in pure JavaScript.
+- [x] **Shared Database Architecture (`PostgreSQL`)**:
+  - Configured shared PostgreSQL database schema (`packages/database/prisma/schema.prisma`) portable via standard `DATABASE_URL` (compatible with Supabase, AWS RDS, Neon, Docker).
+  - Defined unified models for: `users`, `patients`, `doctor_profile`, `availability_rules`, `consultation_fee_rules`, `appointments`, `payments`, `consultations`, `medicines`, `prescriptions`, `video_sessions`, `passwordless_tokens`, and `audit_logs`.
+- [x] **Global Theme Tokens & Base Configuration**:
+  - Implemented CSS variables and Tailwind styling for Light Mode, Dark Mode, and System preference.
+  - Implemented zero-FOUC `ThemeSwitcher` in `patient-website/frontend`, `doctor-panel/frontend`, and `video-app/frontend`.
+- [x] **Failover Email & Cloudflare R2 Services Foundation**:
+  - Automated Dual Failover Email Engine (Gmail SMTP $\rightarrow$ Resend rollover).
+  - Cloudflare R2 storage service using S3-compatible JavaScript SDK (`@aws-sdk/client-s3`).
 
 ---
 
-### Phase 1: Independent Video Calling Application (`video-app`)
+### Phase 1: Independent Video Calling Application (`video-app`) — **[COMPLETED & VERIFIED]**
 **Goal:** Build a fully independent, standalone video calling platform with dynamic link generation, interactive whiteboard, and in-call note taker.
 
-- [ ] **`video-app/backend`**:
-  - Independent signaling server (WebSockets / WebRTC / LiveKit SFU integration).
-  - Dynamic link generation API endpoint (e.g., `POST /api/rooms` accepting external requests with authentication tokens).
-  - Webhook/callback dispatcher to notify external systems upon call termination (providing session ID, start time, end time, and duration).
-  - Room expiration and unrecorded call enforcement (no media recording or storage).
-- [ ] **`video-app/frontend`**:
-  - Standalone video calling interface with clean participant view.
-  - Universal Theme Switcher (Light / Dark / System mode toggle in navigation/controls).
+- [x] **`video-app/backend`**:
+  - Independent WebRTC signaling server via Socket.io for peer-to-peer audio, video, and screen sharing.
+  - Dynamic link generation API endpoint (`POST /api/rooms`) accepting external creation requests with cryptographically secure tokens.
+  - Dynamic token validation endpoint (`GET /api/rooms/:roomId/validate`).
+  - Webhook/callback dispatcher to notify clinic backend upon call termination (`notifyClinicSessionEnded` with start/end time and duration seconds).
+  - Strict zero-recording enforcement (no media persistence or audio/video recording buffers).
+  - Room-level `activePresentation` tracking to synchronize screen presentation feeds for late-joining participants.
+- [x] **`video-app/frontend`**:
+  - Standalone video calling interface with clean participant view and picture-in-picture local preview.
+  - Universal Theme Switcher (Light / Dark / System mode toggle with zero-FOUC).
   - Media controls: Screen share toggle, Microphone mute/unmute, Camera on/off, End call.
-  - Settings modal: Microphone selection, speaker selection, camera selection, connection quality monitor.
-  - **Drawing Canvas (Whiteboard)**: Real-time collaborative canvas (freehand pen, shapes, colors, eraser, clear, undo/redo).
-  - **Note Taker**: In-call text editor allowing the doctor to write consultation notes during the call.
-  - Dynamic link entry handling: Validate room token from URL parameters on join.
+  - Settings modal: Audio/video device selection (microphone, camera, speaker) and connection quality reassurance.
+  - **Drawing Canvas (Whiteboard)**: Interactive collaborative canvas with freehand brush, color palette, eraser, clear canvas, 16:9 aspect ratio locking, real-time Socket.io stroke synchronization, and Doctor `"Share to Patient"` auto-drawer triggering.
+  - **Note Taker**: In-call text editor with local autosave, character counter, clipboard copy, and `.txt` file export.
+  - **Multi-Peer Responsive Alignment**: Dynamic Google Meet-style layout adapting for 1, 2, 3, 4, 5+ peers with initials avatars, mic mute pills, and name tags.
+  - **Pinned Presentation Stage**: Automatic full-stage pinning of shared screens (`object-contain`) with zero edge cutoff.
+  - **Mobile Presentation Dual Modes**:
+    - **Case 1 (Whiteboard OPEN + Presentation ON)**: Cam feeds hidden on mobile to maximize whiteboard & presentation; Google Meet member count circle displayed in bottom-right corner.
+    - **Case 2 (Whiteboard CLOSED + Presentation ON)**: Horizontal scrollable carousel of cam tiles (`h-20 sm:h-24 overflow-x-auto`) directly below the shared screen.
+  - **Late Joiner Screen Share Sync**: Immediate WebRTC renegotiation on join ensures late arrivals instantly see active screen shares.
+  - Dynamic link entry handling: Validates room token and role from URL parameters on join (`/room/:roomId?token=...&role=...`).
+  - Codebase cleanup: Pure JavaScript/JSX, extracted reusable teardown helpers, removed redundant props and dead code. Next.js build verification exit code 0.
 
 ---
 
@@ -124,7 +130,7 @@ Kale-Clinic-Website/
     - Cryptographic signature verification.
     - Idempotency protection against duplicate webhook events.
     - Transactional state transition from `held` / `pending_payment` to `confirmed`.
-  - Email notification dispatch: Send booking confirmation, calendar details (patient time + IST), and dynamic video consultation link.
+  - Email notification dispatch via Dual Failover Engine (Primary: Gmail SMTP, Secondary: Resend): Send booking confirmation, calendar details (patient time + IST), and dynamic video consultation link.
 
 ---
 
@@ -171,8 +177,8 @@ Kale-Clinic-Website/
 - [ ] **Finalization & Immutable PDF Generation**:
   - Doctor explicit finalization action (locks prescription; amendments create new versions).
   - Server-side printable PDF renderer using finalized snapshot (not mutable master).
-  - Private object storage upload (S3-compatible / encrypted volume).
-  - Automated secure email dispatch with prescription PDF / portal download link.
+  - Private object storage upload to **Cloudflare R2** (10 GB free forever, zero bandwidth/egress fees, using `@aws-sdk/client-s3`).
+  - Automated secure email dispatch with prescription PDF / portal download link via Failover Email Engine.
 
 ---
 

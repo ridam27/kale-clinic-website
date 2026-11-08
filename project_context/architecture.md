@@ -1,26 +1,27 @@
 # Application Architecture
 
 **Status:** Confirmed architecture  
-**Last updated:** 2026-11-07 09:05 IST  
+**Last updated:** 2026-11-08 14:05 IST  
 
 ## 1. Overview
 
-The repository is organized into three distinct top-level folders, each containing separate `frontend/` and `backend/` sub-directories:
+The repository is organized into three distinct top-level folders, each containing separate `frontend/` and `backend/` sub-directories with **completely decoupled, independent `node_modules` and local `.env` files**:
 
 1. **`patient-website/` (Patient Website & Records Portal)**:
    - `frontend/`: Public patient-facing Next.js/React application (guest booking, timezone converter, passwordless portal, Light/Dark/System theme switcher).
    - `backend/`: Dedicated API for patient operations (availability queries, booking holds, payment processing, OTP verification).
-   - **Shared Database**: Directly accesses the shared PostgreSQL database.
+   - **Shared Database**: Accesses the shared Supabase PostgreSQL database via local `@kale/database` (`file:../../packages/database`).
 
 2. **`doctor-panel/` (Doctor & Admin Management Dashboard)**:
    - `frontend/`: Doctor-facing Next.js/React dashboard (fee management, prescription maker, patient database, appointment calendar, Light/Dark/System theme switcher).
    - `backend/`: Dedicated API for clinical and administrative management (prescriptions, medicine master, fee rules, appointment status, dynamic consultation link generation).
-   - **Shared Database**: Operates on the **exact same PostgreSQL database** as `patient-website`.
+   - **Shared Database**: Operates on the **exact same Supabase PostgreSQL database** as `patient-website` via local `@kale/database` (`file:../../packages/database`).
 
 3. **`video-app/` (Completely Independent Video Calling Platform)**:
-   - `frontend/`: Standalone WebRTC video calling web application featuring screen share, camera toggle, microphone mute/unmute, settings modal, interactive drawing canvas (whiteboard), note taker, and Light/Dark/System theme switcher.
-   - `backend/`: Completely independent signaling server, room lifecycle manager, and dynamic link generation API (callable by external systems such as `doctor-panel/backend`).
+   - `frontend/`: Standalone WebRTC video calling web application featuring multi-peer streaming, Google Meet tile alignment, pinned screen presentation, camera toggle, microphone mute/unmute, settings modal, interactive drawing canvas (whiteboard), note taker, and Light/Dark/System theme switcher.
+   - `backend/`: Completely independent signaling server, room lifecycle manager, active presentation synchronizer, and dynamic link generation API (callable by external systems such as `doctor-panel/backend`).
    - Independent data lifecycle; zero recording or media storage.
+   - Completely independent dependencies (`video-app/backend/node_modules`, `video-app/frontend/node_modules`) and local `.env`.
 
 ## 2. Logical architecture
 
@@ -36,13 +37,13 @@ flowchart TB
         D_FE --> D_BE[backend/\nAdmin & Doctor API]
     end
 
-    subgraph SHARED_DATA ["Shared Data Layer"]
-        SHARED_DB[(Shared PostgreSQL DB\nPatients, Appointments, Fees,\nPrescriptions, Medicines)]
+    subgraph SHARED_DATA ["Shared Data & Services Layer"]
+        SHARED_DB[(Shared Standard PostgreSQL DB\nPortable via DATABASE_URL:\nSupabase / Neon / RDS / Docker)]
         P_BE --> SHARED_DB
         D_BE --> SHARED_DB
-        P_BE --> EXT_PAY[Payment Gateway]
-        P_BE --> EXT_EMAIL[Email Provider]
-        D_BE --> EXT_STORE[Private Storage]
+        P_BE --> EXT_PAY[Payment Gateway\nRazorpay / Stripe]
+        P_BE --> EXT_EMAIL[Dual Failover Email Engine\nPrimary: Gmail SMTP\nSecondary: Resend]
+        D_BE --> EXT_STORE[Private Object Storage\nCloudflare R2 - 10 GB Free\nZero Egress Fees]
     end
 
     subgraph VIDEO_SVC ["Folder 3: video-app/ (Completely Independent)"]
@@ -59,36 +60,38 @@ flowchart TB
 ## 3. Suggested stack
 
   -----------------------------------------------------------------------
-  Layer                               Proposal
+  Layer                               Choice & Specification
   ----------------------------------- -----------------------------------
-  Language                            TypeScript
+  Language                            Pure JavaScript (ES Modules, .js, .jsx)
 
-  Patient frontend                    Next.js / React
+  Patient frontend                    Next.js / React (JavaScript) + Tailwind CSS
 
-  Doctor dashboard                    Next.js / React
+  Doctor dashboard                    Next.js / React (JavaScript) + Tailwind CSS
 
-  Backend                             NestJS or structured Next.js API
+  Backend                             Node.js / Express / Next.js API (JavaScript)
 
-  Database                            PostgreSQL
+  Database                            Standard PostgreSQL (via DATABASE_URL; zero
+                                      vendor lock-in, compatible with Supabase,
+                                      Neon, AWS RDS, or self-hosted Docker)
 
-  ORM                                 Prisma or Drizzle
+  ORM / Query Engine                  Prisma or standard PostgreSQL driver (JS)
 
-  Authentication                      Email OTP / secure magic link
+  Authentication                      Email OTP / secure magic link (Node.js)
 
-  Video                               WebRTC with LiveKit or equivalent
+  Video                               WebRTC / SFU signaling (JavaScript)
 
-  PDF                                 Server-side HTML-to-PDF
+  PDF                                 Server-side HTML-to-PDF (Node.js)
 
-  Email                               Resend / Amazon SES / equivalent
+  Email (Failover Engine)             Automated Dual-Provider Failover:
+                                      - Primary: Gmail SMTP (Nodemailer, 500/day)
+                                      - Secondary: Resend (Edge API, 3,000/mo)
 
-  Storage                             Private S3-compatible object
-                                      storage
+  Storage                             Cloudflare R2 (10 GB free forever, $0
+                                      egress/bandwidth fees, S3-compatible JS SDK)
 
-  Payments                            Provider approved for Indian and
-                                      required international payments
+  Payments                            Razorpay / Stripe (Server webhook verification)
 
-  Hosting                             Reliable cloud hosting, backups,
-                                      monitoring
+  Themes                              Universal Light, Dark, System Switcher
   -----------------------------------------------------------------------
 
 These are proposals; explain trade-offs before changing major choices.

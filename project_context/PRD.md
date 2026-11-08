@@ -245,7 +245,7 @@ but confirm applicable professional rules before launch. Finalized
 prescriptions cannot be silently overwritten; amendments create new
 versions.
 
-## 13. Email notifications
+## 13. Email notifications & failover architecture
 
 Email only; WhatsApp out of scope.
 
@@ -257,6 +257,10 @@ refund/payment update.
 Include patient-local date/time and timezone plus doctor IST. Avoid
 sensitive clinical details in ordinary email; use secure portal links.
 Configure SPF, DKIM, and DMARC.
+
+**Failover Engine**:
+- Primary provider: **Gmail SMTP** via `nodemailer` (500 free emails/day; direct replies land in doctor's Gmail).
+- Secondary provider: **Resend** (3,000 free emails/month; automatic failover if Gmail daily quota is reached or connection fails).
 
 ## 14. Patient history
 
@@ -275,22 +279,20 @@ international booking enablement, hold duration, cancellation/refund
 policy, email templates/reminders, video join window, patient portal
 settings, and medicine master.
 
-## 16. Suggested technical stack
+## 16. Technical stack
 
--   Frontend: Next.js / React / TypeScript
--   Backend: NestJS or structured Next.js API
--   Database: PostgreSQL
--   ORM: Prisma or Drizzle
--   Auth: email OTP/magic link
--   Video: WebRTC with LiveKit or equivalent
--   PDF: server-side HTML-to-PDF
--   Email: Resend/Amazon SES or equivalent
--   Storage: private S3-compatible object storage
--   Payments: gateway approved for Indian and required international
-    transactions
--   Hosting: reliable cloud hosting with backups and monitoring
-
-These are proposals; document trade-offs before changing.
+-   Language: Pure JavaScript (ES Modules, .js, .jsx)
+-   Frontend: Next.js / React (JavaScript) + Tailwind CSS
+-   Backend: Node.js / Express / Next.js API (JavaScript)
+-   Database: Standard PostgreSQL (portable via `DATABASE_URL`; compatible with Supabase, Neon, AWS RDS, or Docker)
+-   ORM / Data Access: Prisma or standard PostgreSQL driver (JavaScript)
+-   Auth: email OTP / magic link
+-   Video: Independent WebRTC application
+-   PDF: Server-side HTML-to-PDF
+-   Email: Dual Failover Engine (Primary: Gmail SMTP, Secondary: Resend)
+-   Storage: Cloudflare R2 (10 GB free forever, zero egress fee, S3-compatible JS SDK)
+-   Payments: Gateway approved for Indian and required international transactions
+-   Theme: Universal Light / Dark / System Switcher
 
 ## 17. Phased delivery
 

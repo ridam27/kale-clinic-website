@@ -1,0 +1,420 @@
+// =============================================================================
+// SHARED DATABASE SCHEMA (PostgreSQL)
+// Shared by: patient-website/backend & doctor-panel/backend
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+
+enum UserRole {
+  DOCTOR
+  ADMIN
+  PATIENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum AppointmentStatus {
+  HELD
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+  PAYMENT_FAILED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ConsultationStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MealTiming {
+  BEFORE_FOOD
+  AFTER_FOOD
+  WITH_FOOD
+  EMPTY_STOMACH
+  BEDTIME
+  CUSTOM
+}
+
+enum PrescriptionStatus {
+  DRAFT
+  FINALIZED
+}
+
+// -----------------------------------------------------------------------------
+// Identity & Users
+// -----------------------------------------------------------------------------
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?        // Null for passwordless patients
+  role          UserRole       @default(PATIENT)
+  doctorProfile DoctorProfile?
+  patient       Patient?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// Doctor Profile & Clinic Identity
+// -----------------------------------------------------------------------------
+
+model DoctorProfile {
+  id                 String                  @id @default(uuid())
+  userId             String                  @unique
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName           String
+  qualifications     String                  // e.g. "BHMS, MD (Homeopathy)"
+  registrationNumber String                  // Medical registration authority number
+  bio                String?
+  clinicName         String                  @default("Kale Homeopathy Clinic")
+  clinicAddress      String?
+  clinicPhone        String?
+  clinicEmail        String?
+  defaultTimezone    String                  @default("Asia/Kolkata")
+  availabilityRules  AvailabilityRule[]
+  exceptions         AvailabilityException[]
+  appointments       Appointment[]
+  consultations      Consultation[]
+  prescriptions      Prescription[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@map("doctor_profiles")
+}
+
+// -----------------------------------------------------------------------------
+// Scheduling & Availability Rules (Authored in Asia/Kolkata IST)
+// -----------------------------------------------------------------------------
+
+model AvailabilityRule {
+  id                  String        @id @default(uuid())
+  doctorId            String
+  doctor              DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek           Int           // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime           String        // "09:00" in 24h format IST
+  endTime             String        // "12:00" in 24h format IST
+  slotDurationMinutes Int           @default(30)
+  bufferMinutes       Int           @default(0)
+  isActive            Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([doctorId, dayOfWeek])
+  @@map("availability_rules")
+}
+
+model AvailabilityException {
+  id              String        @id @default(uuid())
+  doctorId        String
+  doctor          DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  date            DateTime      @db.Date
+  isBlocked       Boolean       @default(true) // e.g. Leave / Holiday
+  customStartTime String?
+  customEndTime   String?
+  reason          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([doctorId, date])
+  @@map("availability_exceptions")
+}
+
+// -----------------------------------------------------------------------------
+// Fee Management
+// -----------------------------------------------------------------------------
+
+model ConsultationFeeRule {
+  id                    String   @id @default(uuid())
+  countryCode           String   @unique // "IN" for India, "GLOBAL" for general intl
+  currency              String   @default("INR")
+  initialFeeMinorUnits  Int      @default(15000) // 15000 = INR 150.00
+  followUpFeeMinorUnits Int      @default(15000)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("consultation_fee_rules")
+}
+
+// -----------------------------------------------------------------------------
+// Patients (Guest bookings & returning patients)
+// -----------------------------------------------------------------------------
+
+model Patient {
+  id            String         @id @default(uuid())
+  userId        String?        @unique
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName      String
+  dateOfBirth   DateTime?      @db.Date
+  ageSnapshot   Int?
+  gender        Gender?
+  email         String
+  phone         String
+  countryCode   String         // e.g. "IN", "US", "GB"
+  timezone      String         // IANA identifier, e.g. "Asia/Kolkata", "America/New_York"
+  isConsentGiven Boolean       @default(true)
+  appointments  Appointment[]
+  consultations Consultation[]
+  prescriptions Prescription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([email])
+  @@map("patients")
+}
+
+// -----------------------------------------------------------------------------
+// Appointments
+// -----------------------------------------------------------------------------
+
+model Appointment {
+  id                  String            @id @default(uuid())
+  patientId           String
+  patient             Patient           @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctorId            String
+  doctor              DoctorProfile     @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  slotStartUtc        DateTime          // Exact UTC instant
+  slotEndUtc          DateTime          // Exact UTC instant
+  patientTimezone     String            // IANA identifier recorded at booking
+  status              AppointmentStatus @default(HELD)
+  holdExpiresAt       DateTime?         // Server hold expiration (suggested 10 mins)
+  chiefComplaint      String?
+  cancellationReason  String?
+  payment             Payment?
+  videoSession        VideoSession?
+  consultation        Consultation?
+  prescriptions       Prescription[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([doctorId, slotStartUtc])
+  @@index([patientId])
+  @@index([status, holdExpiresAt])
+  @@map("appointments")
+}
+
+// -----------------------------------------------------------------------------
+// Payments
+// -----------------------------------------------------------------------------
+
+model Payment {
+  id                 String        @id @default(uuid())
+  appointmentId      String        @unique
+  appointment        Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  amountMinorUnits   Int           // Snapshot price, e.g. 15000 for INR 150
+  currency           String        // Snapshot currency, e.g. "INR"
+  provider           String        @default("razorpay") // "razorpay" | "stripe"
+  providerOrderId    String?       @unique
+  providerPaymentId  String?       @unique
+  providerSignature  String?
+  status             PaymentStatus @default(PENDING)
+  failureReason      String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+// -----------------------------------------------------------------------------
+// Video Consultation Session Metadata (Dynamic Link references)
+// -----------------------------------------------------------------------------
+
+model VideoSession {
+  id              String      @id @default(uuid())
+  appointmentId   String      @unique
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  roomId          String      @unique // Dynamic room ID in independent video app
+  doctorUrl       String      // Full link for doctor
+  patientUrl      String      // Full link for patient
+  callStartedAt   DateTime?   // Captured on call start
+  callEndedAt     DateTime?   // Captured on call finish
+  durationSeconds Int?        // Call duration metadata only (no media stored)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("video_sessions")
+}
+
+// -----------------------------------------------------------------------------
+// Consultations & Clinical Workspace
+// -----------------------------------------------------------------------------
+
+model Consultation {
+  id                      String              @id @default(uuid())
+  appointmentId           String              @unique
+  appointment             Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patientId               String
+  patient                 Patient             @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctorId                String
+  doctor                  DoctorProfile       @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  status                  ConsultationStatus  @default(SCHEDULED)
+  chiefComplaints         String?
+  historyOfPresentIllness String?
+  clinicalObservations    String?
+  diagnosis               String?
+  patientAdvice           String?             // Patient-visible clinical recommendations
+  internalDoctorNotes     String?             // STRICTLY PRIVATE to doctor (never in patient portal/API)
+  followUpDate            DateTime?           @db.Date
+  vitals                  ConsultationVitals?
+  prescription            Prescription?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  @@map("consultations")
+}
+
+model ConsultationVitals {
+  id                     String       @id @default(uuid())
+  consultationId         String       @unique
+  consultation           Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  heartRateBpm           Int?
+  bloodPressureSystolic  Int?
+  bloodPressureDiastolic Int?
+  bloodGlucoseMgDl       Float?
+  heightCm               Float?
+  weightKg               Float?
+  temperatureCelsius     Float?
+  spo2Percent            Float?
+  recordedAt             DateTime     @default(now())
+
+  @@map("consultation_vitals")
+}
+
+// -----------------------------------------------------------------------------
+// Medicine Master Catalogue
+// -----------------------------------------------------------------------------
+
+model Medicine {
+  id                  String             @id @default(uuid())
+  name                String             @unique // e.g. "Arnica Montana"
+  potency             String             // e.g. "30C", "200C", "1M"
+  form                String             // e.g. "Pills", "Dilution", "Globules", "Drops"
+  category            String?            // e.g. "Plant", "Mineral", "Nosode"
+  strengthDescription String?
+  defaultDosage       String?
+  isActive            Boolean            @default(true)
+  notes               String?
+  prescriptionItems   PrescriptionItem[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([name])
+  @@map("medicines")
+}
+
+// -----------------------------------------------------------------------------
+// Prescriptions & Immutable Versioned Snapshots
+// -----------------------------------------------------------------------------
+
+model Prescription {
+  id                           String             @id @default(uuid())
+  consultationId               String             @unique
+  consultation                 Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  appointmentId                String
+  appointment                  Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  patientId                    String
+  patient                      Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctorId                     String
+  doctor                       DoctorProfile      @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  prescriptionNumber           String             @unique // e.g. "RX-2026-0001"
+  version                      Int                @default(1)
+  status                       PrescriptionStatus @default(DRAFT)
+  patientDemographicsSnapshot  Json               // Patient snapshot at time of prescription
+  clinicalSummarySnapshot      Json?              // Vitals, diagnosis, complaints snapshot
+  generalAdvice                String?
+  followUpDate                 DateTime?          @db.Date
+  pdfStoragePath               String?            // Secure path in private object storage
+  finalizedAt                  DateTime?          // Non-null once approved by doctor
+  items                        PrescriptionItem[]
+  createdAt                    DateTime           @default(now())
+  updatedAt                    DateTime           @updatedAt
+
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicineId     String?
+  medicine       Medicine?    @relation(fields: [medicineId], references: [id], onDelete: SetNull)
+  medicineName   String       // Snapshot of name
+  potency        String       // Snapshot of potency
+  form           String       // Snapshot of form
+  dosage         String       // e.g. "4 globules"
+  frequency      String       // e.g. "3 times daily"
+  mealTiming     MealTiming   @default(AFTER_FOOD)
+  duration       String       // e.g. "14 days"
+  instructions   String?
+  sortOrder      Int          @default(0)
+
+  @@map("prescription_items")
+}
+
+// -----------------------------------------------------------------------------
+// Passwordless Authentication Tokens
+// -----------------------------------------------------------------------------
+
+model PasswordlessToken {
+  id        String   @id @default(uuid())
+  email     String
+  tokenHash String   @unique // SHA-256 hash of random OTP / magic token
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, expiresAt])
+  @@map("passwordless_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// Security Audit Logs
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  actorId      String?
+  actorRole    UserRole?
+  action       String    // e.g. "PRESCRIPTION_FINALIZED", "FEE_UPDATED", "RECORD_VIEWED"
+  resourceType String    // e.g. "Prescription", "Patient", "FeeRule"
+  resourceId   String?
+  ipAddress    String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+

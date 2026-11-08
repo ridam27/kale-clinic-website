@@ -10,14 +10,19 @@ mandatory; architecture is the approved technical direction; phases is
 the implementation roadmap; this file is the implementation guardrail;
 memory is the chronological handoff log.
 
-Make small testable changes. Use TypeScript strict mode, shared types,
+Make small testable changes. Use pure modern JavaScript (ES Modules, .js, .jsx),
 schema validation, migrations, readable code, and tests. Keep business
 logic server-side. Do not silently change scope.
 
 ## 2. Use
 
+-   Pure modern JavaScript (.js, .jsx) across frontend and backend (no TypeScript).
 -   Three top-level directories (`patient-website/`, `doctor-panel/`, `video-app/`), each containing isolated `frontend/` and `backend/`.
--   Shared PostgreSQL database for `patient-website` and `doctor-panel`.
+-   Independent, isolated `node_modules` per sub-directory (no root npm workspaces hoisting).
+-   Independent, isolated `.env` configuration per project folder (no shared root `.env`).
+-   Standard, portable Supabase PostgreSQL database accessible via `DATABASE_URL` and `@kale/database` (`file:../../packages/database`) shared by `patient-website` and `doctor-panel`.
+-   Cloudflare R2 for private prescription PDF storage (10 GB free forever, zero egress fee, S3-compatible).
+-   Automated Dual Failover Email Engine (Primary: Gmail SMTP for zero cost & direct phone replies; Secondary: Resend for automatic rollover when daily limits are hit).
 -   Completely independent `video-app` supporting dynamic link generation by external systems.
 -   Video platform feature set: screen share, camera controls, microphone mute/unmute, settings, drawing canvas, and note taker.
 -   Doctor/admin panel capabilities: fee management, prescription maker, patient database, appointment scheduling, and consultation link generation.
@@ -44,6 +49,8 @@ logic server-side. Do not silently change scope.
 -   Never trust browser role, price, payment state, patient ownership,
     availability, or prescription status.
 -   No secrets in frontend bundles or source control.
+-   No database vendor lock-in: Never rely on proprietary database extensions or non-standard SQL; preserve portability across Supabase, RDS, Neon, and Docker.
+-   No hardcoded single-provider email dependencies; all outbound emails route through the failover engine.
 -   No separate databases for patient website and doctor panel (they must share the same PostgreSQL database).
 -   No coupling of the video calling platform as a clinic-branded subdomain (e.g. `doctor.videocall.com`); it is an independent standalone project in a separate repo.
 -   No public medical-file storage or permanent public PDF URLs.
