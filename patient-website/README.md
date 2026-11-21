@@ -1,71 +1,95 @@
 # Patient Website & Records Portal (`patient-website`)
 
-This project houses the public-facing patient website, guest consultation booking engine, timezone converter, and passwordless records portal for Dr. Kale's Clinic.
+A unified, full-stack Next.js 14 application powering the public-facing patient website, guest consultation booking engine, automated timezone converter, and passwordless records portal for Kale Homeopathy Clinic.
 
 ---
 
-## Architecture & Subdirectories
+## Unified Full-Stack Architecture
 
 ```text
 patient-website/
-├── frontend/             # Next.js 14 / React (Pure JavaScript) - Runs on Port 3000
-│   ├── src/
-│   │   ├── app/          # App Router (layout.jsx, page.jsx, globals.css)
-│   │   └── components/   # ThemeSwitcher.jsx, Booking components
-│   ├── tailwind.config.js
-│   └── package.json
-│
-└── backend/              # Express API (Pure JavaScript) - Runs on Port 4000
-    ├── src/
-    │   ├── services/     # emailService.js (Automated Dual Failover Engine)
-    │   └── index.js      # API router & endpoints
-    └── package.json
+├── README.md                  # Project overview & operational commands
+├── WEBSITE_CONTENT.md         # Clinical specifications & page-by-page content
+├── package.json               # Single unified package configuration
+├── next.config.js             # Next.js build & dev configuration
+├── tailwind.config.js         # Design tokens & color system
+├── postcss.config.js
+├── jsconfig.json              # Path aliases (@/* -> ./src/*)
+├── .env.example               # Full-stack environment template
+├── public/                    # Static assets, logos, favicon
+└── src/
+    ├── app/                   # App Router (Pages + Server API Route Handlers)
+    │   ├── layout.jsx         # Root layout, clinical metadata & theme injector
+    │   ├── page.jsx           # Page 1: Homepage & Clinical Overview
+    │   ├── globals.css        # Palette tokens, typography, and theme variables
+    │   ├── about/             # Page 2: The Practice & Physician Profile
+    │   │   └── page.jsx
+    │   ├── services/          # Page 3: Consultations & Transparent Fees
+    │   │   └── page.jsx
+    │   ├── book/              # Page 4: Interactive Guest Booking & Hold Lock
+    │   │   └── page.jsx
+    │   ├── portal/            # Page 5: Passwordless Patient Portal & Rx Viewer
+    │   │   └── page.jsx
+    │   ├── contact/           # Page 6: FAQs, Clinic Hours & Inquiry Form
+    │   │   └── page.jsx
+    │   └── api/               # Built-in Server Route Handlers (Replaces Express)
+    │       ├── availability/
+    │       │   └── route.js   # GET: IST to local timezone slot calculations
+    │       ├── appointments/
+    │       │   ├── hold/
+    │       │   │   └── route.js # POST: 10-minute hold lock during checkout
+    │       │   └── confirm/
+    │       │       └── route.js # POST: Payment confirm, video link, and email dispatch
+    │       ├── portal/
+    │       │   ├── send-otp/
+    │       │   │   └── route.js # POST: Passwordless OTP generation & email
+    │       │   ├── verify-otp/
+    │       │   │   └── route.js # POST: OTP authentication & session issue
+    │       │   └── records/
+    │       │       └── route.js # GET: Patient consultation history & prescriptions
+    │       └── contact/
+    │           └── route.js   # POST: Patient query form with clinic notification
+    │
+    ├── components/            # Reusable UI components
+    │   ├── Navbar.jsx         # Global navigation header
+    │   ├── Footer.jsx         # Global footer with credentials & legal notice
+    │   └── ThemeSwitcher.jsx  # Universal Light/Dark mode toggle
+    │
+    └── lib/                   # Server-side business logic & services
+        ├── email.js           # Multi-provider email failover engine (Gmail / Resend)
+        ├── scheduler.js       # Doctor schedule (9 AM - 12 PM IST) slot calculator
+        └── constants.js       # Clinic fee rules, timings, and supported countries
 ```
 
 ---
 
 ## Key Features
 
-1. **Guest Consultation Booking**: Minimal data collection (Name, DOB/age, email, phone with country code, chief complaint). No mandatory password registration.
-2. **Timezone Conversion**: Automatically shows doctor's IST hours (`Asia/Kolkata`, 9:00 AM – 12:00 PM) converted into the patient's local timezone.
-3. **Automated Dual Failover Email Engine**:
-   - **Primary (Gmail SMTP via `nodemailer`)**: Free, fast (1–2s delivery), and patient replies land directly in Dr. Kale's Gmail app.
-   - **Secondary (Resend)**: If Gmail's daily quota (480 safe limit) is reached or throttled, all subsequent emails are automatically and seamlessly dispatched via Resend.
-4. **Universal Theme Switcher**: Light, Dark, and System modes with zero-FOUC (no theme flashing).
-5. **Shared Database**: Operates directly on the shared PostgreSQL database via `@kale/database`.
+1. **Zero Express Redundancy:** Runs both user-facing pages and server API routes on a single port (`3000`) with zero CORS issues.
+2. **Guest Consultation Booking:** Minimal data collection (Name, age/DOB, email, phone with country code, chief complaint). No mandatory password registration.
+3. **Automated Timezone Conversion:** Automatically maps the clinic's IST morning hours (`9:00 AM – 12:00 PM IST`, Mon–Sat) into the patient's local clock anywhere in the world.
+4. **Dual Failover Email Engine (`src/lib/email.js`):**
+   - **Primary (Gmail SMTP via `nodemailer`):** Free, fast delivery, with direct patient replies landing in the clinic's inbox.
+   - **Secondary (Resend):** Automatically routes dispatches to Resend if Gmail's daily quota (480 safe threshold) is approached or throttled.
+5. **Passwordless Patient Portal:** Instant 6-digit email OTP login allowing patients to review past appointments and download official PDF prescriptions.
 
 ---
 
-## How to Start
+## Getting Started
 
-### Prerequisites
-Make sure the root `.env` file exists with your `DATABASE_URL` and email credentials configured.
-
-### 1. Start Backend API (Port 4000)
+### 1. Install Dependencies
 ```bash
-cd backend
 npm install
+```
+
+### 2. Configure Environment
+Copy `.env.example` to `.env` and fill in your database and email credentials:
+```bash
+cp .env.example .env
+```
+
+### 3. Start Development Server (Port 3000)
+```bash
 npm run dev
 ```
-- Health Check: `http://localhost:4000/api/health`
-- Test Failover Email: `POST http://localhost:4000/api/test-email` with `{ "to": "your-email@example.com" }`
-
-### 2. Start Frontend (Port 3000)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-- Open `http://localhost:3000` in your browser.
-
----
-
-## Environment Variables Used
-- `DATABASE_URL`: PostgreSQL connection string (Supabase / local Postgres).
-- `PATIENT_API_PORT`: `4000`
-- `NEXT_PUBLIC_PATIENT_WEB_URL`: `http://localhost:3000`
-- `GMAIL_USER`: Doctor's Gmail address
-- `GMAIL_APP_PASSWORD`: 16-character Google App Password
-- `RESEND_API_KEY`: Fallback Resend API Key
-- `RESEND_FROM_ADDRESS`: Verified Resend sender address
-
+Open [http://localhost:3000](http://localhost:3000) to view the application.

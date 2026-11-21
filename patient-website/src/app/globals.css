@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ======================================================== */
+  /* LIGHT MODE PALETTE (Default)                             */
+  /* ======================================================== */
+  :root {
+    /* 1. Canvas & Page Backgrounds */
+    --canvas: #ffffff;
+    --canvas-subtle: #f8fafc;
+    --canvas-topbar: #f8fafc;
+
+    /* 2. Cards & Containers */
+    --card: #ffffff;
+    --card-subtle: #f8fafc;
+    --card-hover: #f8fafc;
+    --card-border: #e2e8f0;
+    --card-border-hover: #cddcf7;
+
+    /* 3. Typography */
+    --text-heading: #0b1528;
+    --text-body: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+
+    /* 4. Brand Accent */
+    --accent: #31509a;
+    --accent-hover: #253e7a;
+    --accent-soft: #eef3fc;
+    --accent-border: #cddcf7;
+
+    /* 5. Buttons */
+    --btn-primary-bg: #31509a;
+    --btn-primary-hover: #253e7a;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #ffffff;
+    --btn-secondary-hover: #eef3fc;
+    --btn-secondary-text: #0b1528;
+    --btn-secondary-border: #e2e8f0;
+
+    /* 6. Structural Borders & Dividers */
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+
+    /* 7. Notice & Emergency Alert */
+    --alert-bg: #fff1f2;
+    --alert-border: #ffe4e6;
+    --alert-text: #9f1239;
+    --alert-title: #881337;
+    --alert-icon: #e11d48;
+
+    /* 8. Final CTA Banner */
+    --banner-from: #0b1528;
+    --banner-to: #1b2d58;
+    --banner-glow: rgba(49, 80, 154, 0.3);
+  }
+
+  /* ======================================================== */
+  /* DARK MODE PALETTE                                        */
+  /* ======================================================== */
+  .dark {
+    /* 1. Canvas & Page Backgrounds */
+    --canvas: #090e17;
+    --canvas-subtle: #0c1322;
+    --canvas-topbar: #060b13;
+
+    /* 2. Cards & Containers */
+    --card: #111b2d;
+    --card-subtle: #0c1322;
+    --card-hover: #15233c;
+    --card-border: #1e2c45;
+    --card-border-hover: #233863;
+
+    /* 3. Typography */
+    --text-heading: #ffffff;
+    --text-body: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+
+    /* 4. Brand Accent (High-visibility luminous sapphire) */
+    --accent: #85abfc;
+    --accent-hover: #a5c2fd;
+    --accent-soft: #14223d;
+    --accent-border: #233863;
+
+    /* 5. Buttons */
+    --btn-primary-bg: #3a62be;
+    --btn-primary-hover: #4a74d8;
+    --btn-primary-text: #ffffff;
+    --btn-secondary-bg: #111b2d;
+    --btn-secondary-hover: #14223d;
+    --btn-secondary-text: #ffffff;
+    --btn-secondary-border: #1e2c45;
+
+    /* 6. Structural Borders & Dividers */
+    --border: #1e2c45;
+    --border-subtle: #162136;
+
+    /* 7. Notice & Emergency Alert */
+    --alert-bg: #200d11;
+    --alert-border: #3b151b;
+    --alert-text: #fecdd3;
+    --alert-title: #ffe4e6;
+    --alert-icon: #fb7185;
+
+    /* 8. Final CTA Banner */
+    --banner-from: #080d17;
+    --banner-to: #131d33;
+    --banner-glow: rgba(133, 171, 252, 0.15);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-body);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-heading);
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

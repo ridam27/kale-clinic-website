@@ -247,6 +247,225 @@ source document.
 
 ## 8. Change Log
 
+### 2026-11-15 14:40 IST — Plan Confirmed: 5 Pages Built 1-by-1, Page 1 (Home) Implemented
+
+**Status:** IMPLEMENTED
+
+**Work completed**
+- **5-Page Scope Formally Established**:
+  - The user confirmed the site will consist of exactly 5 pages, built sequentially one-by-one:
+    1. **Home (`/`)**
+    2. **About (`/about`)**
+    3. **Patient Portal (`/portal`)**
+    4. **Book Consultation (`/book`)**
+    5. **Contact (`/contact`)**
+- **Page 1: Home Page Implemented (`src/app/page.jsx`)**:
+  - **Asymmetric Editorial Hero**: High-contrast headline with serif touch (`for enduring vitality`), patient-focused copy, primary green scheduling CTA, and a clean hairline trust strip.
+  - **Live Virtual Practice Dock**: Real-time consultation preview card with clinic timings (`9:00 AM – 12:00 PM IST`), local timezone auto-sync preview chip, authentic Samuel Hahnemann Organon quote, and slot discovery link.
+  - **Typographic Manifesto**: Unboxed 3-part constitutional philosophy breakdown (01 Timeline Intake, 02 Ultra-Dilution Standard, 03 Open Pharmacy Promise).
+  - **6-Pillar Bento Showcase**: High-contrast 2-column layout (Obsidian Black, Crisp White, Soft Cream, and Spring Lime) matching the reference aesthetic.
+  - **Clinical Focus Spectrum**: Categorized by body systems (Dermatological, Respiratory, Digestive, Hormonal, Pediatric, Emotional) with clean condition pills.
+  - **Connected Minimalist Pathway**: 3-step patient journey (Select Slot → Intake & Hold Lock → Consult in Video Room).
+  - **Forest Green Closing Invitation**: Deep green sanctuary card with cream typography and vibrant spring lime CTA button.
+- **Global Shared Components**:
+  - `Navbar.jsx`: 5-page navigation linking to Home, About, Patient Portal, Contact, and Book Consultation (primary CTA).
+  - `Footer.jsx`: Clinical credentials, 5-page directory, hours, fee schedule, and statutory non-emergency disclaimer.
+  - `layout.jsx`: Injects Navbar, Footer, and clinical metadata.
+  - `globals.css` & `tailwind.config.js`: Green-primary palette (`#163A27`), Spring Lime (`#B2EF63`), Linen Cream (`#F7F7F4`), and Obsidian Black (`#0D1712`).
+
+**Files changed**
+- `patient-website/src/app/page.jsx`
+- `patient-website/src/app/layout.jsx`
+- `patient-website/src/app/globals.css`
+- `patient-website/src/components/Navbar.jsx`
+- `patient-website/src/components/Footer.jsx`
+- `patient-website/tailwind.config.js`
+- `project_context/memory.md`
+
+### 2026-11-15 14:32 IST — Architectural Decision: Unified Next.js Full-Stack App for `patient-website` (Eliminated Express Redundancy)
+
+**Status:** DECIDED & IMPLEMENTED
+
+**Work completed**
+- **Unified Full-Stack Architecture Decision**:
+  - The user decided that having separate `frontend/` and `backend/` folders for `patient-website` was unnecessary because Next.js 14 App Router natively supports Route Handlers (`app/api/.../route.js`) and Server Functions.
+  - Eliminated the separate Express server, removing cross-origin CORS overhead, dual port management (`3000` vs `4000`), dual `node_modules`, and dual `.env` configurations.
+- **Directory Structure Reorganization**:
+  - Established `patient-website` as a single, self-contained Next.js full-stack project root:
+    - `public/`: Static clinic assets, favicon, and brand assets.
+    - `src/app/`: Multi-page clinical routes (`/about`, `/services`, `/book`, `/portal`, `/contact`).
+    - `src/app/api/`: Native Next.js API route handlers (`/api/availability`, `/api/appointments/hold`, `/api/appointments/confirm`, `/api/portal/*`, `/api/contact`).
+    - `src/components/`: Reusable clinical UI components (`Navbar.jsx`, `Footer.jsx`, `ThemeSwitcher.jsx`).
+    - `src/lib/`: Server-side business logic and utilities (`email.js` failover engine, `scheduler.js`, `constants.js`).
+  - Created root `package.json` (`@kale/patient-website`) and unified `.env.example`.
+  - Updated `patient-website/README.md` with the new single-command startup workflow.
+
+**Files changed**
+- `patient-website/package.json`
+- `patient-website/.env.example`
+- `patient-website/README.md`
+- Created `patient-website/src/lib/email.js`
+- Created directory scaffold: `patient-website/src/app/about`, `patient-website/src/app/services`, `patient-website/src/app/book`, `patient-website/src/app/portal`, `patient-website/src/app/contact`, `patient-website/src/app/api/...`
+- `project_context/memory.md`
+
+### 2026-11-15 13:35 IST — Reset Patient Website Implementation per User Request
+
+**Status:** IMPLEMENTED
+
+**Work completed**
+- **Clean Reset of Patient Website Implementation**:
+  - The user requested to delete the generated implementation content and start over again, while preserving `WEBSITE_CONTENT.md`, `README.md`, and the `frontend/` and `backend/` folder structures.
+  - Removed all generated page routes from `patient-website/frontend/src/app/`:
+    - `about/`
+    - `services/`
+    - `book/`
+    - `portal/`
+    - `contact/`
+  - Removed generated frontend navigation component: `patient-website/frontend/src/components/Navigation.jsx`.
+  - Removed generated backend appointment service: `patient-website/backend/src/services/appointmentService.js`.
+  - Removed `.next` build cache directory.
+  - Reverted modified files (`page.jsx`, `layout.jsx`, `globals.css`, `tailwind.config.js`, `next.config.js`, and `backend/src/index.js`) back to clean initial baseline commit (`559bcf7`).
+  - Preserved `patient-website/WEBSITE_CONTENT.md`, `patient-website/README.md`, and `patient-website/frontend/` and `patient-website/backend/` folders.
+
+**Files changed**
+- Deleted `patient-website/frontend/src/app/about/`
+- Deleted `patient-website/frontend/src/app/services/`
+- Deleted `patient-website/frontend/src/app/book/`
+- Deleted `patient-website/frontend/src/app/portal/`
+- Deleted `patient-website/frontend/src/app/contact/`
+- Deleted `patient-website/frontend/src/components/Navigation.jsx`
+- Deleted `patient-website/backend/src/services/appointmentService.js`
+- Restored `patient-website/frontend/src/app/page.jsx`
+- Restored `patient-website/frontend/src/app/layout.jsx`
+- Restored `patient-website/frontend/src/app/globals.css`
+- Restored `patient-website/frontend/tailwind.config.js`
+- Restored `patient-website/frontend/next.config.js`
+- Restored `patient-website/backend/src/index.js`
+- `project_context/memory.md`
+
+**Status:** IMPLEMENTED & VERIFIED
+
+**Work completed**
+- **Green Established as Primary Brand Color**:
+  - Re-anchored `--color-primary` from obsidian black to **Deep Botanical Forest Green** (`#163A27`), paired with the vibrant **Spring Lime Green** (`#B2EF63`) from the reference image for energetic accents and pill highlights.
+  - Buttons across navigation, hero, services, and booking flow now feature rich green styling (`bg-primary hover:bg-primary-hover text-white`) with high-contrast spring lime icons.
+- **Removed Repetitive "Dr. Kale" Mentions**:
+  - Replaced repetitive doctor naming with dignified institutional terminology: *"The Practice"*, *"Our Consulting Physician"*, *"Kale Clinic"*, and *"Clinical Consultations"*.
+  - Shifted focus from self-promotional phrasing to patient-centered health narratives and constitutional science.
+- **Bespoke, Human-Crafted Homepage Architecture (`src/app/page.jsx`)**:
+  - **Asymmetric Editorial Hero**: Left column features an expressive headline with classic serif touch (`for enduring vitality`), dignified copy, primary green schedule button, and a clean hairline reassurance strip.
+  - **Live Virtual Practice Dock**: Right column features an interactive consultation preview card showing active morning hours (9:00 AM – 12:00 PM IST), local timezone auto-sync preview chip, authentic Samuel Hahnemann quote, and slot discovery link.
+  - **Typographic Manifesto**: Replaced generic boxed cards with an unboxed 3-part editorial section (01 Timeline Intake, 02 Minimum Dose, 03 Open Prescriptions) separated by delicate vertical hairline borders.
+  - **Refined 6-Pillar Bento Showcase**: 2-column bento rhythm from reference image with Deep Forest Obsidian, Crisp White, Soft Cream, and Spring Lime cards.
+  - **Clinical Spectrum by Body System**: Replaced repetitive 6-box icon grid with structured clinical systems (Dermatological, Respiratory, Digestive, Hormonal, Pediatric, Emotional) featuring clean condition pills.
+  - **Connected Minimalist Pathway**: 3-step streamlined patient journey.
+  - **Forest Green Closing Invitation**: Deep green sanctuary card with cream typography and vibrant spring lime CTA button.
+- **Windows Webpack Build Optimization (`next.config.js`)**:
+  - Added `webpack: (config) => { config.cache = false; return config; }` to eliminate transient Windows filesystem worker thread `mkdir` EPERM lock race conditions.
+  - Production build verified with `npm run build`: All 9 routes compiled and statically prerendered with exit code 0.
+
+**Files changed**
+- `patient-website/frontend/tailwind.config.js`
+- `patient-website/frontend/next.config.js`
+- `patient-website/frontend/src/app/globals.css`
+- `patient-website/frontend/src/app/layout.jsx`
+- `patient-website/frontend/src/app/page.jsx`
+- `patient-website/frontend/src/components/Navigation.jsx`
+- `patient-website/frontend/src/app/about/page.jsx`
+- `patient-website/frontend/src/app/services/page.jsx`
+- `patient-website/frontend/src/app/book/page.jsx`
+- `patient-website/frontend/src/app/portal/page.jsx`
+- `patient-website/frontend/src/app/contact/page.jsx`
+- `project_context/memory.md`
+
+**Status:** IMPLEMENTED & VERIFIED
+
+**Work completed**
+- **User Image Color Extraction & Design System**:
+  - Extracted exact pixel palette from user's uploaded reference image (`media_1794724723173_f5a20e25.jpg`):
+    - **Warm Cream Canvas (`--color-background`, `--color-cream`)**: `#F7F7F5`
+    - **Deep Obsidian Black (`--color-primary`, `--color-dark`, `--color-text`)**: `#0A0A0A`
+    - **Crisp Pure White (`--color-surface`)**: `#FFFFFF`
+    - **Vibrant Spring Lime Green (`--color-accent-green`, `--color-primary-soft`)**: `#B2EF63`
+    - **Subtle Border (`--color-border`)**: `#E5E5DF`
+    - **Muted Slate (`--color-text-muted`)**: `#64666E`
+- **Tailwind & CSS Tokens Updated**:
+  - Updated `patient-website/frontend/tailwind.config.js` to register `accent` (`DEFAULT`, `hover`, `soft`), `dark` (`DEFAULT`, `card`, `border`), and `cream` tokens.
+  - Rewrote `patient-website/frontend/src/app/globals.css` with CSS variables for Light and Dark modes.
+- **6-Pillar Bento Grid Matching Reference Image**:
+  - Implemented the 2-column, 6-card Bento Grid in `patient-website/frontend/src/app/page.jsx`:
+    - Top Pill: Soft border with vibrant lime green dot (`• Everything you need for trusted holistic care`).
+    - Column 1:
+      1. Obsidian Black Card (`#0A0A0A`) with Lime Green badge (`#B2EF63`): "Daily Morning Clinics in IST".
+      2. Crisp White Card (`#FFFFFF`) with soft gray/cream badge: "Instant PDF Prescriptions".
+      3. Obsidian Black Card (`#0A0A0A`) with Lime Green badge (`#B2EF63`): "Private by Design & Unrecorded".
+    - Column 2:
+      4. Crisp White Card (`#FFFFFF`) with soft badge: "Constitutional Case Taking".
+      5. Crisp White Card (`#FFFFFF`) with soft badge: "Transparent ₹150 Baseline".
+      6. Vibrant Spring Lime Green Card (`#B2EF63`) with Obsidian Black badge (`#0A0A0A`): "Zero-Fuss Guest Experience".
+- **Comprehensive Color Polish Across All 6 Pages**:
+  - `Navigation.jsx`: Dark Obsidian brand badge with vibrant lime shield (`bg-dark text-accent`), soft cream top announcement banner with animated pulsing green dot, and Apple/Linear-style dark CTA button.
+  - `layout.jsx`: High-contrast lime selection (`selection:bg-accent selection:text-dark`) and refined footer with green status indicator.
+  - `/about`: Dark credential card with lime initials (`bg-dark text-accent`), cream foundation chips, and dark bento-styled ethics cards.
+  - `/services`: Recommended tier highlighted with dark border and lime badge, cream fee boxes with bold typography, and dark bottom CTA banner.
+  - `/book`: Step indicator numbers (active in dark obsidian with lime ring, completed in lime green with dark text), dark slot cards with lime focus ring, and clean guest form.
+  - `/portal`: Dark lock/key avatar with lime green icon, modernized passwordless OTP input, and prescription preview modal updated from legacy green to crisp dark letterhead on cream background.
+  - `/contact`: Clean FAQ accordion with cream hover states, dark virtual clinic info card, and emergency disclaimer notice.
+- **Verification**:
+  - Ran `next build` inside `patient-website/frontend`: All 9 static routes compiled and prerendered cleanly (exit code 0).
+  - Verified backend syntax with `node --check src/index.js` (exit code 0).
+
+**Files changed**
+- `patient-website/frontend/tailwind.config.js`
+- `patient-website/frontend/src/app/globals.css`
+- `patient-website/frontend/src/app/layout.jsx`
+- `patient-website/frontend/src/app/page.jsx`
+- `patient-website/frontend/src/components/Navigation.jsx`
+- `patient-website/frontend/src/app/about/page.jsx`
+- `patient-website/frontend/src/app/services/page.jsx`
+- `patient-website/frontend/src/app/book/page.jsx`
+- `patient-website/frontend/src/app/portal/page.jsx`
+- `patient-website/frontend/src/app/contact/page.jsx`
+- `project_context/memory.md`
+
+**Status:** IMPLEMENTED & VERIFIED
+
+**Work completed**
+- **Complete Patient Website Implementation (`patient-website/frontend`)**:
+  - Implemented all 6 core pages based on `WEBSITE_CONTENT.md`:
+    1. **Home (`/`)**: Hero section, trust badges, constitutional approach, 6 clinical focus cards (skin, respiratory, digestion, hormonal, pediatric, stress), 3-step booking summary, and dual CTAs.
+    2. **About Doctor (`/about`)**: Dr. Kale’s clinical background, BHMS/MD (Hom) credentials, 4 classical Hahnemannian principles, tele-homeopathy advantages, and ethical guarantees.
+    3. **Services & Fees (`/services`)**: Initial Consultation (30 mins, ₹150 INR baseline), Follow-Up (15–20 mins), Acute Care (15 mins), comparison table, what's included vs not, and reschedule/cancellation terms.
+    4. **Book Appointment (`/book`)**: Comprehensive interactive guest booking flow featuring auto-detected country/timezone selector, interactive date & slot picker with live 10-minute slot hold countdown timer, patient intake form, summary & payment simulation, and instant booking confirmation screen with single-click video room link.
+    5. **Patient Records Portal (`/portal`)**: Passwordless email OTP verification, upcoming appointments card with active "Join Call" button, past consultation history, and an interactive **Printable PDF Prescription Preview Modal** (clinic header, Rx items table, dosage/frequency/duration, general advice, and doctor sign-off).
+    6. **FAQs, Contact & Medical Disclaimer (`/contact`)**: Categorized FAQs accordion, virtual clinic hours (Mon–Sat 9:00 AM – 12:00 PM IST), patient query submission form, and statutory emergency medical disclaimer (112/911/999 notice).
+- **Backend API Implementation (`patient-website/backend`)**:
+  - `GET /api/doctor`: Public doctor profile, registration credentials, clinic hours, and fee rules.
+  - `GET /api/availability`: Live slot calculation in IST with dynamic conversion to patient-selected timezone and booked/held slot filtering.
+  - `POST /api/appointments/hold`: 10-minute hold lock mechanism during checkout.
+  - `POST /api/appointments/:id/confirm-payment`: Payment verification, status update, dynamic video link generation, and automated confirmation email dispatch via failover engine.
+  - `POST /api/portal/send-otp` & `POST /api/portal/verify-otp`: Secure passwordless authentication.
+  - `GET /api/portal/records`: Fetching upcoming visits, past records, and sample clinical prescriptions.
+  - `POST /api/contact`: Patient inquiry handling with clinic notification email.
+- **Botanical Forest Sage & Warm Linen Palette Applied**:
+  - Updated `globals.css` with Option 1: Deep Forest Sage (`#1F513F`), Warm Linen (`#FAF9F5`), Crisp White (`#FFFFFF`), Deep Forest Charcoal (`#182620`), and Eucalyptus accents (`#5E8B75`).
+  - Dark mode configured with Deep Velvet Forest (`#0E1713`) and glowing herbal mint (`#48BA86`).
+  - Production build verified with `next build` (all 9 routes compiled cleanly with exit code 0).
+
+**Files changed**
+- `patient-website/frontend/src/app/globals.css`
+- `patient-website/frontend/src/app/layout.jsx`
+- `patient-website/frontend/src/app/page.jsx`
+- `patient-website/frontend/src/app/about/page.jsx`
+- `patient-website/frontend/src/app/services/page.jsx`
+- `patient-website/frontend/src/app/book/page.jsx`
+- `patient-website/frontend/src/app/portal/page.jsx`
+- `patient-website/frontend/src/app/contact/page.jsx`
+- `patient-website/frontend/src/components/Navigation.jsx`
+- `patient-website/backend/src/index.js`
+- `patient-website/backend/src/services/appointmentService.js`
+- `project_context/memory.md`
+
 ### 2026-11-08 14:05 IST — Phase 1 Completion, Late-Joiner Presentation Sync, Dual Mobile Layout (Case 1 & 2), and Decoupled Independent Node Modules & Per-Project .env
 
 **Status:** IMPLEMENTED & DECIDED
