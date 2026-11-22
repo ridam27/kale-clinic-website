@@ -29,8 +29,8 @@ export function Navbar() {
   const navLinks = [
     { label: 'Home', href: '/' },
     { label: 'About Us', href: '/about' },
-    { label: 'Book Consultation', href: '/book' },
-    { label: 'Contact & Support', href: '/contact' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Contact Us', href: '/contact' },
   ];
 
   return (
@@ -56,14 +56,9 @@ export function Navbar() {
                 </div>
               </div>
 
-              <div className="flex flex-col">
-                <span className="text-lg font-bold tracking-tight text-txt-heading group-hover:text-accent transition-colors leading-tight">
+                <span className="text-xl font-bold tracking-tight text-txt-heading group-hover:text-accent transition-colors leading-tight">
                   Kale Clinic
                 </span>
-                <span className="text-[10px] tracking-wider font-semibold uppercase text-txt-muted">
-                  Online Homeopathic Care
-                </span>
-              </div>
             </Link>
 
             {/* Desktop Navigation Links */}

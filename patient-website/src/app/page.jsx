@@ -465,7 +465,7 @@ export default function HomePage() {
                   href="/contact"
                   className="w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 transition-all duration-200"
                 >
-                  Contact & Support
+                  Contact Us
                 </Link>
               </div>
             </div>

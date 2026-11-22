@@ -60,6 +60,12 @@ module.exports = {
           title: 'var(--alert-title)',
           icon: 'var(--alert-icon)',
         },
+        // 8. Social Brand Accents
+        social: {
+          fb: 'var(--social-fb)',
+          ig: 'var(--social-ig)',
+          li: 'var(--social-li)',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

@@ -55,6 +55,11 @@
     --banner-from: #0b1528;
     --banner-to: #1b2d58;
     --banner-glow: rgba(49, 80, 154, 0.3);
+
+    /* 9. Social Brand Accents */
+    --social-fb: #1877f2;
+    --social-ig: #e4405f;
+    --social-li: #0a66c2;
   }
 
   /* ======================================================== */
@@ -109,6 +114,11 @@
     --banner-from: #080d17;
     --banner-to: #131d33;
     --banner-glow: rgba(133, 171, 252, 0.15);
+
+    /* 9. Social Brand Accents */
+    --social-fb: #428eec;
+    --social-ig: #f46a85;
+    --social-li: #3b90e3;
   }
 
   * {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -24,6 +24,18 @@ import {
 
 export default function AboutPage() {
   const [activeModalCard, setActiveModalCard] = useState(null);
+
+  // Prevent background scrolling when mobile card modal is active
+  useEffect(() => {
+    if (activeModalCard) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeModalCard]);
 
   const whyChooseItems = [
     {
@@ -340,7 +352,7 @@ export default function AboutPage() {
                 href="/contact"
                 className="w-full sm:w-auto px-7 py-3.5 sm:py-4 rounded-full bg-btn-secondary-bg hover:bg-btn-secondary-hover border border-btn-secondary-border text-btn-secondary-text font-semibold text-sm transition-all duration-200"
               >
-                Contact & Support
+                Contact Us
               </Link>
             </div>
           </div>

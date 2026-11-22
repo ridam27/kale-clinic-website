@@ -19,7 +19,8 @@ export function Footer() {
     { label: 'Home', href: '/' },
     { label: 'About Us', href: '/about' },
     { label: 'Book Consultation', href: '/book' },
-    { label: 'Contact & Support', href: '/contact' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Contact Us', href: '/contact' },
   ];
 
   const legalLinks = [
@@ -34,19 +35,19 @@ export function Footer() {
       name: 'Facebook',
       href: 'https://facebook.com',
       icon: Facebook,
-      color: 'hover:text-[#1877F2] hover:border-[#1877F2]/30',
+      color: 'hover:text-social-fb hover:border-social-fb/30',
     },
     {
       name: 'Instagram',
       href: 'https://instagram.com',
       icon: Instagram,
-      color: 'hover:text-[#E4405F] hover:border-[#E4405F]/30',
+      color: 'hover:text-social-ig hover:border-social-ig/30',
     },
     {
       name: 'LinkedIn',
       href: 'https://linkedin.com',
       icon: Linkedin,
-      color: 'hover:text-[#0A66C2] hover:border-[#0A66C2]/30',
+      color: 'hover:text-social-li hover:border-social-li/30',
     },
   ];
 
@@ -143,7 +144,7 @@ export function Footer() {
           {/* Column 4: Contact Information & Socials */}
           <div className="lg:col-span-3 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-txt-heading">
-              Contact & Support
+              Contact Us
             </h4>
             <div className="space-y-3 text-sm">
               <a
